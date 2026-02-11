@@ -1,0 +1,513 @@
+﻿@{
+    ViewBag.Title = "Görev Takip Sistemi";
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Görev Takip Sistemi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+
+        .container {
+            max-width: 900px;
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+        }
+
+        .badge-pending {
+            background-color: #ffc107;
+            color: #000;
+        }
+
+        .badge-in-progress {
+            background-color: #0dcaf0;
+        }
+
+        .badge-completed {
+            background-color: #198754;
+        }
+
+        .task-item {
+            padding: 15px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+            .task-item:hover {
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            }
+
+        .task-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .task-description {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .task-meta {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .btn-group-sm {
+            gap: 5px;
+        }
+
+        .form-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+            .empty-state img {
+                max-width: 150px;
+                margin-bottom: 20px;
+                opacity: 0.5;
+            }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="text-center mb-4 pt-4">
+            <h1 class="text-white mb-2">📋 Görev Takip Sistemi</h1>
+            <p class="text-white-50">Görevlerinizi kolayca yönetin</p>
+        </div>
+
+        <!-- Yeni Görev Ekleme Formu -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">➕ Yeni Görev Ekle</h5>
+            </div>
+            <div class="card-body">
+                <form id="taskForm">
+                    <div class="form-section">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="title" class="form-label">Görev Başlığı *</label>
+                                    <input type="text" class="form-control" id="title" name="title"
+                                           placeholder="Görev başlığını girin" required maxlength="100">
+                                    <small class="text-muted">En fazla 100 karakter</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="status" class="form-label">Durum</label>
+                                    <select class="form-select" id="status" name="status">
+                                        <option value="0">Bekliyor</option>
+                                        <option value="1">Devam Ediyor</option>
+                                        <option value="2">Tamamlandı</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Açıklama</label>
+                            <textarea class="form-control" id="description" name="description"
+                                      rows="3" placeholder="Görev açıklamasını girin..." maxlength="500"></textarea>
+                            <small class="text-muted">En fazla 500 karakter</small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <span id="submitBtnText">Görev Ekle</span>
+                                <span id="submitBtnSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+                            </button>
+                            <button type="reset" class="btn btn-secondary">Temizle</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Görevler Listesi -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">📊 Görevler</h5>
+                <span id="taskCount" class="badge bg-white text-dark">0</span>
+            </div>
+            <div class="card-body">
+                <!-- Loading Spinner -->
+                <div class="loading" id="loadingSpinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Yükleniyor...</span>
+                    </div>
+                    <p class="mt-2">Görevler yükleniyor...</p>
+                </div>
+
+                <!-- Görevler Listesi -->
+                <div id="taskList"></div>
+
+                <!-- Boş Durum -->
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <p class="fs-5">Henüz görev eklenmemiş</p>
+                    <p class="text-muted">Yukarıdaki formu kullanarak ilk görevini oluştur</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Görev Düzenle -->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Görev Düzenle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <form id="editForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="editId">
+
+                        <div class="mb-3">
+                            <label for="editTitle" class="form-label">Görev Başlığı</label>
+                            <input type="text" class="form-control" id="editTitle" required maxlength="100">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editDescription" class="form-label">Açıklama</label>
+                            <textarea class="form-control" id="editDescription" rows="3" maxlength="500"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editStatus" class="form-label">Durum</label>
+                            <select class="form-select" id="editStatus" required>
+                                <option value="0">Bekliyor</option>
+                                <option value="1">Devam Ediyor</option>
+                                <option value="2">Tamamlandı</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                        <button type="submit" class="btn btn-primary">
+                            <span id="saveBtnText">Kaydet</span>
+                            <span id="saveBtnSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // API URL - Backend'inize göre değiştirin
+        const API_URL = '/api/tasks';
+        let editModal;
+
+        // Tarih formatı
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const options = {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            return date.toLocaleDateString('tr-TR', options);
+        }
+
+        // Status badge
+        function getStatusBadge(status) {
+            const badges = {
+                'Bekliyor': '<span class="badge badge-pending">⏳ Bekliyor</span>',
+                'Yapılıyor': '<span class="badge badge-in-progress">🔄 Yapılıyor</span>',
+                'Bitti': '<span class="badge badge-completed">✅ Bitti</span>'
+            };
+            return badges[status] || status;
+        }
+
+        // Modal başlatma
+        document.addEventListener('DOMContentLoaded', function() {
+            editModal = new bootstrap.Modal(document.getElementById('editModal'));
+            loadTasks();
+
+            // Form submit
+            document.getElementById('taskForm').addEventListener('submit', addTask);
+
+            // Edit form submit
+            document.getElementById('editForm').addEventListener('submit', updateTask);
+        });
+
+        // Görevleri yükle
+        function loadTasks() {
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const taskList = document.getElementById('taskList');
+            const emptyState = document.getElementById('emptyState');
+
+            loadingSpinner.style.display = 'block';
+            taskList.innerHTML = '';
+            emptyState.style.display = 'none';
+
+            fetch(API_URL)
+                .then(response => {
+                    if (!response.ok) throw new Error('Ağ hatası');
+                    return response.json();
+                })
+                .then(tasks => {
+                    loadingSpinner.style.display = 'none';
+
+                    if (tasks.length === 0) {
+                        emptyState.style.display = 'block';
+                        document.getElementById('taskCount').textContent = '0';
+                        return;
+                    }
+
+                    document.getElementById('taskCount').textContent = tasks.length;
+
+                    tasks.forEach(task => {
+                        const taskElement = document.createElement('div');
+                        taskElement.className = 'task-item bg-white border rounded';
+                        taskElement.id = `task-${task.id}`;
+
+                        taskElement.innerHTML = `
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div class="task-title">${escapeHtml(task.title)}</div>
+                                            ${task.description ? `<div class="task-description">${escapeHtml(task.description)}</div>` : ''}
+                                            <div class="task-meta">
+                                                <span class="me-3">📅 ${formatDate(task.createdDate)}</span>
+                                                <span>${getStatusBadge(task.status)}</span>
+                                            </div>
+                                        </div>
+                                        <div class="btn-group-sm d-flex">
+                                                    <button class="btn btn-sm btn-outline-primary" onclick="openEditModal('${task.id}')">
+                                                ✏️ Düzenle
+                                            </button>
+                                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteTask('${task.id}')"">
+                                                🗑️ Sil
+                                            </button>
+                                        </div>
+                                    </div>
+                                `;
+
+                        taskList.appendChild(taskElement);
+                    });
+                })
+                .catch(error => {
+                    loadingSpinner.style.display = 'none';
+                    taskList.innerHTML = `<div class="alert alert-danger">Görevler yüklenirken hata oluştu: ${error.message}</div>`;
+                    console.error('Hata:', error);
+                });
+        }
+
+        // Yeni görev ekle
+        function addTask(event) {
+            event.preventDefault();
+
+            const title = document.getElementById('title').value.trim();
+            const description = document.getElementById('description').value.trim();
+            const status = document.getElementById('status').value;
+
+            if (!title) {
+                alert('Lütfen görev başlığını girin!');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            const submitBtnText = document.getElementById('submitBtnText');
+            const submitBtnSpinner = document.getElementById('submitBtnSpinner');
+
+            submitBtn.disabled = true;
+            submitBtnText.style.display = 'none';
+            submitBtnSpinner.style.display = 'inline-block';
+
+            const taskData = {
+                title: title,
+                description: description,
+                status: status
+            };
+
+            fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(taskData)
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('Görev eklenemedi');
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('taskForm').reset();
+                    loadTasks();
+                    showNotification('Görev başarıyla eklendi!', 'success');
+                })
+                .catch(error => {
+                    showNotification(`Hata: ${error.message}`, 'danger');
+                    console.error('Hata:', error);
+                })
+                .finally(() => {
+                    submitBtn.disabled = false;
+                    submitBtnText.style.display = 'inline';
+                    submitBtnSpinner.style.display = 'none';
+                });
+        }
+
+        // Görev düzenle modalını aç
+        function openEditModal(taskId) {
+            fetch(`${API_URL}/${taskId}`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Görev bulunamadı');
+                    return response.json();
+                })
+                .then(task => {
+                    document.getElementById('editId').value = task.id;
+                    document.getElementById('editTitle').value = task.title;
+                    document.getElementById('editDescription').value = task.description || '';
+                    document.getElementById('editStatus').value = task.status;
+                    editModal.show();
+                })
+                .catch(error => {
+                    showNotification(`Hata: ${error.message}`, 'danger');
+                    console.error('Hata:', error);
+                });
+        }
+
+        // Görev güncelle
+        function updateTask(event) {
+            event.preventDefault();
+
+            const id = document.getElementById('editId').value;
+            const title = document.getElementById('editTitle').value.trim();
+            const description = document.getElementById('editDescription').value.trim();
+            const status = document.getElementById('editStatus').value;
+
+            if (!title) {
+                alert('Lütfen görev başlığını girin!');
+                return;
+            }
+
+            const saveBtnText = document.getElementById('saveBtnText');
+            const saveBtnSpinner = document.getElementById('saveBtnSpinner');
+
+            saveBtnText.style.display = 'none';
+            saveBtnSpinner.style.display = 'inline-block';
+
+            const taskData = {
+                title: title,
+                description: description,
+                status: status
+            };
+
+            fetch(`${API_URL}/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(taskData)
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('Görev güncellenemedi');
+                    return response.json();
+                })
+                .then(data => {
+                    editModal.hide();
+                    loadTasks();
+                    showNotification('Görev başarıyla güncellendi!', 'success');
+                })
+                .catch(error => {
+                    showNotification(`Hata: ${error.message}`, 'danger');
+                    console.error('Hata:', error);
+                })
+                .finally(() => {
+                    saveBtnText.style.display = 'inline';
+                    saveBtnSpinner.style.display = 'none';
+                });
+        }
+
+        // Görev sil
+        function deleteTask(taskId) {
+            if (!confirm('Bu görevi silmek istediğinize emin misiniz?')) {
+                return;
+            }
+
+            fetch(`${API_URL}/${taskId}`, {
+                method: 'DELETE'
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('Görev silinemedi');
+                    loadTasks();
+                    showNotification('Görev başarıyla silindi!', 'success');
+                })
+                .catch(error => {
+                    showNotification(`Hata: ${error.message}`, 'danger');
+                    console.error('Hata:', error);
+                });
+        }
+
+        // Notification göster
+        function showNotification(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.setAttribute('role', 'alert');
+            alertDiv.innerHTML = `
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
+                    `;
+
+            const container = document.querySelector('.container');
+            container.insertBefore(alertDiv, container.firstChild);
+
+            // 5 saniye sonra otomatik kapat
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        // XSS koruması
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
