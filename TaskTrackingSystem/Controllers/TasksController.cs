@@ -37,7 +37,7 @@ namespace TaskTrackingSystem.Controllers
             if (ModelState.IsValid)
             {
                 task.CreatedDate = DateTime.Now;
-                task.Status = TaskStatusEnum.Bekliyor;
+                task.Status = TaskStatusEnum.InProgress;
                 _context.Tasks.Add(task);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -67,6 +67,12 @@ namespace TaskTrackingSystem.Controllers
             {
                 ModelState.AddModelError("Title", "Başlık zorunludur.");
                 return View(task);
+            }
+
+            if (task.Status == TaskStatusEnum.Completed && status == TaskStatusEnum.InProgress)
+            {
+                TempData["Error"] = "Tamamlanmış görev tekrar 'Yapılıyor.' durumuna alınamaz.";
+                return RedirectToAction(nameof(Index), new { editId = id });
             }
 
             task.Title = title;

@@ -50,7 +50,7 @@ namespace TaskTrackingSystem.Controllers
                 Title = dto.Title,
                 Description = dto.Description,
                 CreatedDate = DateTime.Now,
-                Status = TaskStatusEnum.Bekliyor
+                Status = TaskStatusEnum.New
             };
 
             _context.Tasks.Add(task);
@@ -67,6 +67,13 @@ namespace TaskTrackingSystem.Controllers
             var task = await _context.Tasks.FindAsync(id);
             if (task == null)
                 return NotFound(new { message = "Görev bulunamadı." });
+
+            if (task.Status == TaskStatusEnum.Completed && (TaskStatusEnum)updated.Status == TaskStatusEnum.InProgress)
+            {
+                return BadRequest(new { message = "'Tamamlanmış' bir görev tekrar 'Yapılıyor' olarak işaretlenemez." });
+
+            }
+
 
             task.Title = updated.Title;
             task.Description = updated.Description;

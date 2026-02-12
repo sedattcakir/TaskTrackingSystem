@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="TaskTrackingSystem.Tests/TaskTrackingSystem.Tests.csproj" Id="3a7d75da-32d0-4eeb-b9bb-6a74a6437762" />
   <Project Path="TaskTrackingSystem/TaskTrackingSystem.csproj" />
 </Solution>

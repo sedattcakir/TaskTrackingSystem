@@ -7,9 +7,9 @@ namespace TaskTrackingSystem.Models
 
     public enum TaskStatusEnum
     {
-        Bekliyor = 0,
-        DevamEdiyor = 1,
-        Tamamlandi = 2,
+        New = 0,
+        InProgress = 1,
+        Completed = 2,
     }
     public class TaskItem
     {
@@ -23,7 +23,7 @@ namespace TaskTrackingSystem.Models
         [MaxLength(1000)]
         public string Description { get; set; } // Tanım yapılacak.
         public DateTime CreatedDate { get; set; } = DateTime.Now; // DataTime.Now işlemi şu anki tarihi başlangıç atar.
-        public TaskStatusEnum Status { get; set; } = TaskStatusEnum.Bekliyor; // Burada da işlemi başlangıç seçimini bekliyor olarak açıyor.    
+        public TaskStatusEnum Status { get; set; } = TaskStatusEnum.InProgress; // Burada da işlemi başlangıç seçimini bekliyor olarak açıyor.    
 
     }
 
