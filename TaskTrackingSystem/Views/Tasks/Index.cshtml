@@ -9,6 +9,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Görev Takip Sistemi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css">
     <style>
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -22,12 +24,26 @@
 
         .card {
             border: none;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             margin-bottom: 30px;
         }
 
         .card-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+        }
+
+        .card-header-green {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+        }
+
+        .card-header-pink {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             color: white;
             border: none;
             padding: 15px 20px;
@@ -54,7 +70,33 @@
         }
 
             .task-item:hover {
-                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            }
+
+            .task-item.overdue {
+                border-left-color: #dc3545;
+            }
+
+        .project-item {
+            padding: 12px;
+            border-left: 4px solid #11998e;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+
+            .project-item:hover {
+                box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            }
+
+        .user-item {
+            padding: 12px;
+            border-left: 4px solid #f5576c;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+
+            .user-item:hover {
+                box-shadow: 0 5px 15px rgba(0,0,0,0.1);
             }
 
         .task-title {
@@ -102,123 +144,387 @@
             color: #999;
         }
 
-            .empty-state img {
-                max-width: 150px;
-                margin-bottom: 20px;
-                opacity: 0.5;
+        .user-list {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .tab-btn {
+            padding: 10px 30px;
+            border: 2px solid rgba(255,255,255,0.5);
+            background: transparent;
+            color: white;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+            .tab-btn:hover {
+                background: rgba(255,255,255,0.2);
             }
+
+            .tab-btn.active {
+                background: white;
+                color: #667eea;
+                font-weight: 600;
+                border-color: white;
+            }
+
+        .overdue-text {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        /* Profil Resmi */
+        .avatar-sm {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 4px;
+            vertical-align: middle;
+            border: 1px solid #ddd;
+        }
+
+        .avatar-lg {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #f5576c;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+
+        .avatar-placeholder {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 600;
+            font-size: 11px;
+        }
+
+            .avatar-placeholder.avatar-lg {
+                font-size: 18px;
+            }
+
+        .assigned-users-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            margin-top: 6px;
+        }
+
+        .assigned-user-chip {
+            display: inline-flex;
+            align-items: center;
+            background: #f0f0f0;
+            border-radius: 20px;
+            padding: 2px 10px 2px 2px;
+            font-size: 12px;
+            color: #555;
+        }
+
+        .profile-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #f5576c;
+            display: none;
+        }
+
+        .profile-upload-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Flatpickr özel */
+        .flatpickr-input {
+            background: #fff !important;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <!-- Header -->
         <div class="text-center mb-4 pt-4">
-            <h1 class="text-white mb-2">📋 Görev Takip Sistemi</h1>
+            <h1 class="text-white mb-2">Görev Takip Sistemi</h1>
             <p class="text-white-50">Görevlerinizi kolayca yönetin</p>
+            <div class="d-flex justify-content-center gap-3 mt-3">
+                <button class="tab-btn active" onclick="showTab('tasks')">Görevler</button>
+                <button class="tab-btn" onclick="showTab('projects')">Projeler</button>
+                <button class="tab-btn" onclick="showTab('users')">Kullanıcılar</button>
+            </div>
         </div>
 
-        <!-- Yeni Görev Ekleme Formu -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">➕ Yeni Görev Ekle</h5>
+        <!-- ==================== GÖREVLER BÖLÜMÜ ==================== -->
+        <div id="tasksSection">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Yeni Görev Ekle</h5>
+                </div>
+                <div class="card-body">
+                    <form id="taskForm">
+                        <div class="form-section">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="title" class="form-label">Görev Başlığı *</label>
+                                        <input type="text" class="form-control" id="title" placeholder="Görev başlığını girin" required maxlength="100">
+                                        <small class="text-muted">En fazla 100 karakter</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Proje *</label>
+                                        <select class="form-select" id="addProjectSelect" required>
+                                            <option value="">Yükleniyor...</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Açıklama</label>
+                                <textarea class="form-control" id="description" rows="3" placeholder="Görev açıklamasını girin..." maxlength="500"></textarea>
+                                <small class="text-muted">En fazla 500 karakter</small>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Öncelik</label>
+                                        <select class="form-select" id="addPriority">
+                                            <option value="0">Düşük</option>
+                                            <option value="1" selected>Orta</option>
+                                            <option value="2">Yüksek</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Başlangıç Tarihi</label>
+                                        <input type="text" class="form-control" id="addStartDate" placeholder="Tarih seçin">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Tamamlanma Tarihi</label>
+                                        <input type="text" class="form-control" id="addCompletionDate" placeholder="Tarih seçin">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Atanan Kullanıcılar</label>
+                                <div id="addUserList" class="user-list">Yükleniyor...</div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary" id="submitBtn">
+                                    <span id="submitBtnText">Görev Ekle</span>
+                                    <span id="submitBtnSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+                                </button>
+                                <button type="reset" class="btn btn-secondary">Temizle</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div class="card-body">
-                <form id="taskForm">
-                    <div class="form-section">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="title" class="form-label">Görev Başlığı *</label>
-                                    <input type="text" class="form-control" id="title" name="title"
-                                           placeholder="Görev başlığını girin" required maxlength="100">
-                                    <small class="text-muted">En fazla 100 karakter</small>
-                                </div>
+
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Görevler</h5>
+                    <span id="taskCount" class="badge bg-white text-dark">0</span>
+                </div>
+                <div class="card-body">
+                    <div class="loading" id="loadingSpinner">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2">Görevler yükleniyor...</p>
+                    </div>
+                    <div id="taskList"></div>
+                    <div class="empty-state" id="emptyState" style="display: none;">
+                        <p class="fs-5">Henüz görev eklenmemiş</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== PROJELER BÖLÜMÜ ==================== -->
+        <div id="projectsSection" style="display: none;">
+            <div class="card">
+                <div class="card-header-green">
+                    <h5 class="mb-0">Yeni Proje Ekle</h5>
+                </div>
+                <div class="card-body">
+                    <form id="projectForm">
+                        <div class="form-section">
+                            <div class="mb-3">
+                                <label for="projectTitle" class="form-label">Proje Başlığı *</label>
+                                <input type="text" class="form-control" id="projectTitle" placeholder="Proje başlığını girin" required maxlength="200">
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="status" class="form-label">Durum</label>
-                                    <select class="form-select" id="status" name="status">
-                                        <option value="0">Bekliyor</option>
-                                        <option value="1">Devam Ediyor</option>
-                                        <option value="2">Tamamlandı</option>
-                                    </select>
-                                </div>
+                            <div class="mb-3">
+                                <label for="projectDescription" class="form-label">Açıklama</label>
+                                <textarea class="form-control" id="projectDescription" rows="2" placeholder="Proje açıklamasını girin..."></textarea>
                             </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="description" class="form-label">Açıklama</label>
-                            <textarea class="form-control" id="description" name="description"
-                                      rows="3" placeholder="Görev açıklamasını girin..." maxlength="500"></textarea>
-                            <small class="text-muted">En fazla 500 karakter</small>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary" id="submitBtn">
-                                <span id="submitBtnText">Görev Ekle</span>
-                                <span id="submitBtnSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+                            <button type="submit" class="btn btn-success" id="projectSubmitBtn">
+                                <span id="projectBtnText">Proje Ekle</span>
+                                <span id="projectBtnSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
                             </button>
-                            <button type="reset" class="btn btn-secondary">Temizle</button>
                         </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Görevler Listesi -->
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">📊 Görevler</h5>
-                <span id="taskCount" class="badge bg-white text-dark">0</span>
-            </div>
-            <div class="card-body">
-                <!-- Loading Spinner -->
-                <div class="loading" id="loadingSpinner">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Yükleniyor...</span>
-                    </div>
-                    <p class="mt-2">Görevler yükleniyor...</p>
+                    </form>
                 </div>
+            </div>
 
-                <!-- Görevler Listesi -->
-                <div id="taskList"></div>
-
-                <!-- Boş Durum -->
-                <div class="empty-state" id="emptyState" style="display: none;">
-                    <p class="fs-5">Henüz görev eklenmemiş</p>
-                    <p class="text-muted">Yukarıdaki formu kullanarak ilk görevini oluştur</p>
+            <div class="card">
+                <div class="card-header-green d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Projeler</h5>
+                    <span id="projectCount" class="badge bg-white text-dark">0</span>
+                </div>
+                <div class="card-body">
+                    <div class="loading" id="projectLoadingSpinner">
+                        <div class="spinner-border text-success" role="status"></div>
+                        <p class="mt-2">Projeler yükleniyor...</p>
+                    </div>
+                    <div id="projectList"></div>
+                    <div class="empty-state" id="projectEmptyState" style="display: none;">
+                        <p class="fs-5">Henüz proje eklenmemiş</p>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
+        <!-- ==================== KULLANICILAR BÖLÜMÜ ==================== -->
+        <div id="usersSection" style="display: none;">
+            <div class="card">
+                <div class="card-header-pink">
+                    <h5 class="mb-0">Yeni Kullanıcı Ekle</h5>
+                </div>
+                <div class="card-body">
+                    <form id="userForm">
+                        <div class="form-section">
+                            <div class="row">
+                                <div class="col-md-5">
+                                    <div class="mb-3">
+                                        <label class="form-label">Ad Soyad *</label>
+                                        <input type="text" class="form-control" id="userName" placeholder="Ad soyad girin" required maxlength="100">
+                                    </div>
+                                </div>
+                                <div class="col-md-5">
+                                    <div class="mb-3">
+                                        <label class="form-label">Email *</label>
+                                        <input type="email" class="form-control" id="userEmail" placeholder="Email girin" required maxlength="150">
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="mb-3">
+                                        <label class="form-label">Profil</label>
+                                        <div class="profile-upload-area">
+                                            <img id="profilePreview" class="profile-preview" src="" alt="önizleme">
+                                            <label class="btn btn-sm btn-outline-secondary" style="cursor:pointer;">
+                                                Seç
+                                                <input type="file" id="profileImageInput" accept="image/*" style="display:none;" onchange="previewProfileImage(this)">
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border:none;" id="userSubmitBtn">
+                                <span id="userBtnText">Kullanıcı Ekle</span>
+                                <span id="userBtnSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header-pink d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Kullanıcılar</h5>
+                    <span id="userCount" class="badge bg-white text-dark">0</span>
+                </div>
+                <div class="card-body">
+                    <div class="loading" id="userLoadingSpinner">
+                        <div class="spinner-border text-danger" role="status"></div>
+                        <p class="mt-2">Kullanıcılar yükleniyor...</p>
+                    </div>
+                    <div id="userList"></div>
+                    <div class="empty-state" id="userEmptyState" style="display: none;">
+                        <p class="fs-5">Henüz kullanıcı eklenmemiş</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- container sonu -->
     <!-- Modal: Görev Düzenle -->
     <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Görev Düzenle</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="editForm">
                     <div class="modal-body">
                         <input type="hidden" id="editId">
-
                         <div class="mb-3">
-                            <label for="editTitle" class="form-label">Görev Başlığı</label>
+                            <label class="form-label">Görev Başlığı</label>
                             <input type="text" class="form-control" id="editTitle" required maxlength="100">
                         </div>
-
                         <div class="mb-3">
-                            <label for="editDescription" class="form-label">Açıklama</label>
+                            <label class="form-label">Açıklama</label>
                             <textarea class="form-control" id="editDescription" rows="3" maxlength="500"></textarea>
                         </div>
-
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Durum</label>
+                                    <select class="form-select" id="editStatus" required>
+                                        <option value="0">Bekliyor</option>
+                                        <option value="1">Yapılıyor</option>
+                                        <option value="2">Tamamlandı</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Öncelik</label>
+                                    <select class="form-select" id="editPriority" required>
+                                        <option value="0">Düşük</option>
+                                        <option value="1">Orta</option>
+                                        <option value="2">Yüksek</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Başlangıç Tarihi</label>
+                                    <input type="text" class="form-control" id="editStartDate" placeholder="Tarih seçin">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Tamamlanma Tarihi</label>
+                                    <input type="text" class="form-control" id="editCompletionDate" placeholder="Tarih seçin">
+                                </div>
+                            </div>
+                        </div>
                         <div class="mb-3">
-                            <label for="editStatus" class="form-label">Durum</label>
-                            <select class="form-select" id="editStatus" required>
-                                <option value="0">Bekliyor</option>
-                                <option value="1">Devam Ediyor</option>
-                                <option value="2">Tamamlandı</option>
+                            <label class="form-label">Proje</label>
+                            <select class="form-select" id="editProjectSelect" required>
+                                <option value="">-- Proje Seçin --</option>
                             </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Atanan Kullanıcılar</label>
+                            <div id="editUserList" class="user-list"></div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -233,280 +539,551 @@
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/tr.js"></script>
     <script>
-        // API URL - Backend'inize göre değiştirin
-        const API_URL = '/api/tasks';
-        let editModal;
+        var API_URL = '/api/tasks';
+        var editModal, allUsers = [], allProjects = [];
+        var pendingProfileImage = null;
+        var fpAddStart, fpAddComp, fpEditStart, fpEditComp;
 
-        // Tarih formatı
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            const options = {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            };
-            return date.toLocaleDateString('tr-TR', options);
-        }
-
-        // Status badge
-        function getStatusBadge(status) {
-            const badges = {
-                'Bekliyor': '<span class="badge badge-pending">⏳ Bekliyor</span>',
-                'Yapılıyor': '<span class="badge badge-in-progress">🔄 Yapılıyor</span>',
-                'Bitti': '<span class="badge badge-completed">✅ Bitti</span>'
-            };
-            return badges[status] || status;
-        }
-
-        // Modal başlatma
-        document.addEventListener('DOMContentLoaded', function() {
+        // ==================== BAŞLATMA ====================
+        document.addEventListener('DOMContentLoaded', function () {
             editModal = new bootstrap.Modal(document.getElementById('editModal'));
+            fetch('/api/users').then(function(r) { return r.json(); }).then(function(d) { allUsers = d; renderUserCheckboxes('addUserList', []); });
+            loadProjectsList();
             loadTasks();
-
-            // Form submit
             document.getElementById('taskForm').addEventListener('submit', addTask);
-
-            // Edit form submit
             document.getElementById('editForm').addEventListener('submit', updateTask);
+            document.getElementById('projectForm').addEventListener('submit', addProject);
+            document.getElementById('userForm').addEventListener('submit', addUser);
+
+            // Flatpickr başlatma
+            var fpConfig = {
+                locale: 'tr',
+                dateFormat: 'Y-m-d',
+                altInput: true,
+                altFormat: 'd F Y',
+                allowInput: true
+            };
+            fpAddStart = flatpickr('#addStartDate', fpConfig);
+            fpAddComp = flatpickr('#addCompletionDate', fpConfig);
+            fpEditStart = flatpickr('#editStartDate', fpConfig);
+            fpEditComp = flatpickr('#editCompletionDate', fpConfig);
         });
 
-        // Görevleri yükle
-        function loadTasks() {
-            const loadingSpinner = document.getElementById('loadingSpinner');
-            const taskList = document.getElementById('taskList');
-            const emptyState = document.getElementById('emptyState');
+        // ==================== SEKME ====================
+        function showTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+            document.getElementById('tasksSection').style.display = 'none';
+            document.getElementById('projectsSection').style.display = 'none';
+            document.getElementById('usersSection').style.display = 'none';
 
-            loadingSpinner.style.display = 'block';
-            taskList.innerHTML = '';
-            emptyState.style.display = 'none';
-
-            fetch(API_URL)
-                .then(response => {
-                    if (!response.ok) throw new Error('Ağ hatası');
-                    return response.json();
-                })
-                .then(tasks => {
-                    loadingSpinner.style.display = 'none';
-
-                    if (tasks.length === 0) {
-                        emptyState.style.display = 'block';
-                        document.getElementById('taskCount').textContent = '0';
-                        return;
-                    }
-
-                    document.getElementById('taskCount').textContent = tasks.length;
-
-                    tasks.forEach(task => {
-                        const taskElement = document.createElement('div');
-                        taskElement.className = 'task-item bg-white border rounded';
-                        taskElement.id = `task-${task.id}`;
-
-                        taskElement.innerHTML = `
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div class="flex-grow-1">
-                                            <div class="task-title">${escapeHtml(task.title)}</div>
-                                            ${task.description ? `<div class="task-description">${escapeHtml(task.description)}</div>` : ''}
-                                            <div class="task-meta">
-                                                <span class="me-3">📅 ${formatDate(task.createdDate)}</span>
-                                                <span>${getStatusBadge(task.status)}</span>
-                                            </div>
-                                        </div>
-                                        <div class="btn-group-sm d-flex">
-                                                    <button class="btn btn-sm btn-outline-primary" onclick="openEditModal('${task.id}')">
-                                                ✏️ Düzenle
-                                            </button>
-                                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteTask('${task.id}')"">
-                                                🗑️ Sil
-                                            </button>
-                                        </div>
-                                    </div>
-                                `;
-
-                        taskList.appendChild(taskElement);
-                    });
-                })
-                .catch(error => {
-                    loadingSpinner.style.display = 'none';
-                    taskList.innerHTML = `<div class="alert alert-danger">Görevler yüklenirken hata oluştu: ${error.message}</div>`;
-                    console.error('Hata:', error);
-                });
+            if (tab === 'tasks') {
+                document.getElementById('tasksSection').style.display = 'block';
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+            } else if (tab === 'projects') {
+                document.getElementById('projectsSection').style.display = 'block';
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                loadProjectsView();
+            } else {
+                document.getElementById('usersSection').style.display = 'block';
+                document.querySelectorAll('.tab-btn')[2].classList.add('active');
+                loadUsersView();
+            }
         }
 
-        // Yeni görev ekle
-        function addTask(event) {
-            event.preventDefault();
+        // ==================== YARDIMCI ====================
+        function formatDate(d) {
+            return new Date(d).toLocaleDateString('tr-TR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
 
-            const title = document.getElementById('title').value.trim();
-            const description = document.getElementById('description').value.trim();
-            const status = document.getElementById('status').value;
+        function formatShortDate(d) {
+            return new Date(d).toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' });
+        }
 
-            if (!title) {
-                alert('Lütfen görev başlığını girin!');
+        function getStatusBadge(s) {
+            var badges = {
+                0: '<span class="badge badge-pending">Bekliyor</span>',
+                1: '<span class="badge badge-in-progress">Yapılıyor</span>',
+                2: '<span class="badge badge-completed">Tamamlandı</span>'
+            };
+            return badges[s] || s;
+        }
+
+        function getPriorityBadge(p) {
+            var badges = {
+                0: '<span class="badge bg-secondary">Düşük</span>',
+                1: '<span class="badge bg-warning text-dark">Orta</span>',
+                2: '<span class="badge bg-danger">Yüksek</span>'
+            };
+            return badges[p] || p;
+        }
+
+        function escapeHtml(t) {
+            if (!t) return '';
+            var d = document.createElement('div');
+            d.textContent = t;
+            return d.innerHTML;
+        }
+
+        function getInitials(name) {
+            if (!name) return '?';
+            var parts = name.trim().split(' ');
+            if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+            return parts[0][0].toUpperCase();
+        }
+
+        function buildAvatarHtml(profileImage, name, sizeClass) {
+            if (!sizeClass) sizeClass = 'avatar-sm';
+            if (profileImage) {
+                return '<img src="' + profileImage + '" class="' + sizeClass + '" alt="' + escapeHtml(name) + '">';
+            }
+            return '<span class="' + sizeClass + ' avatar-placeholder">' + getInitials(name) + '</span>';
+        }
+
+        function getFpDate(fpInstance) {
+            if (fpInstance && fpInstance.selectedDates && fpInstance.selectedDates.length > 0) {
+                return fpInstance.selectedDates[0].toISOString();
+            }
+            return null;
+        }
+
+        function showNotification(msg, type) {
+            if (!type) type = 'info';
+            var a = document.createElement('div');
+            a.className = 'alert alert-' + type + ' alert-dismissible fade show';
+            a.innerHTML = msg + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+            var c = document.querySelector('.container');
+            c.insertBefore(a, c.firstChild);
+            setTimeout(function() { a.remove(); }, 5000);
+        }
+
+        function renderProjectSelect(selectId, selectedId) {
+            var s = document.getElementById(selectId);
+            if (!s) return;
+            var html = '<option value="">-- Proje Seçin --</option>';
+            for (var i = 0; i < allProjects.length; i++) {
+                var p = allProjects[i];
+                var sel = (p.id === selectedId) ? ' selected' : '';
+                html += '<option value="' + p.id + '"' + sel + '>' + escapeHtml(p.title) + '</option>';
+            }
+            s.innerHTML = html;
+        }
+
+        function renderUserCheckboxes(containerId, selectedIds) {
+            var c = document.getElementById(containerId);
+            if (!c) return;
+            if (allUsers.length === 0) {
+                c.innerHTML = '<small class="text-muted">Kullanıcı bulunamadı</small>';
                 return;
             }
+            var html = '';
+            for (var i = 0; i < allUsers.length; i++) {
+                var u = allUsers[i];
+                var chk = (selectedIds.indexOf(u.id) >= 0) ? ' checked' : '';
+                html += '<div class="form-check d-flex align-items-center gap-2">';
+                html += '<input class="form-check-input" type="checkbox" value="' + u.id + '" id="' + containerId + '_' + u.id + '"' + chk + '>';
+                html += buildAvatarHtml(u.profileImage, u.name, 'avatar-sm');
+                html += '<label class="form-check-label" for="' + containerId + '_' + u.id + '">' + escapeHtml(u.name) + '</label>';
+                html += '</div>';
+            }
+            c.innerHTML = html;
+        }
 
-            const submitBtn = document.getElementById('submitBtn');
-            const submitBtnText = document.getElementById('submitBtnText');
-            const submitBtnSpinner = document.getElementById('submitBtnSpinner');
+        function getSelectedUserIds(containerId) {
+            var checkboxes = document.querySelectorAll('#' + containerId + ' input:checked');
+            var ids = [];
+            for (var i = 0; i < checkboxes.length; i++) {
+                ids.push(checkboxes[i].value);
+            }
+            return ids;
+        }
 
-            submitBtn.disabled = true;
-            submitBtnText.style.display = 'none';
-            submitBtnSpinner.style.display = 'inline-block';
+        // ==================== PROFİL RESMİ ====================
+        function previewProfileImage(input) {
+            var preview = document.getElementById('profilePreview');
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    pendingProfileImage = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
 
-            const taskData = {
-                title: title,
-                description: description,
-                status: status
-            };
+        // ==================== PROJE ====================
+        function loadProjectsList() {
+            fetch('/api/projects').then(function(r) { return r.json(); }).then(function(d) {
+                allProjects = d;
+                renderProjectSelect('addProjectSelect', '');
+            });
+        }
+
+        function loadProjectsView() {
+            var sp = document.getElementById('projectLoadingSpinner');
+            var li = document.getElementById('projectList');
+            var em = document.getElementById('projectEmptyState');
+            sp.style.display = 'block';
+            li.innerHTML = '';
+            em.style.display = 'none';
+
+            fetch('/api/projects').then(function(r) { return r.json(); }).then(function(projects) {
+                sp.style.display = 'none';
+                document.getElementById('projectCount').textContent = projects.length;
+                if (projects.length === 0) { em.style.display = 'block'; return; }
+                for (var i = 0; i < projects.length; i++) {
+                    var p = projects[i];
+                    var e = document.createElement('div');
+                    e.className = 'project-item bg-white border rounded';
+                    var descHtml = p.description ? '<div style="color:#666;font-size:14px;">' + escapeHtml(p.description) + '</div>' : '';
+                    e.innerHTML = '<div class="d-flex justify-content-between align-items-center"><div>'
+                        + '<div style="font-weight:600;color:#333;">' + escapeHtml(p.title) + '</div>'
+                        + descHtml
+                        + '<div style="font-size:12px;color:#999;">' + formatDate(p.createdTime) + '</div>'
+                        + '</div>'
+                        + '<button class="btn btn-sm btn-outline-danger" onclick="deleteProject(\'' + p.id + '\')">Sil</button>'
+                        + '</div>';
+                    li.appendChild(e);
+                }
+            }).catch(function(err) {
+                sp.style.display = 'none';
+                li.innerHTML = '<div class="alert alert-danger">Hata: ' + err.message + '</div>';
+            });
+        }
+
+        function addProject(e) {
+            e.preventDefault();
+            var title = document.getElementById('projectTitle').value.trim();
+            var desc = document.getElementById('projectDescription').value.trim();
+            if (!title) { alert('Proje başlığı girin!'); return; }
+
+            var btn = document.getElementById('projectSubmitBtn');
+            var bt = document.getElementById('projectBtnText');
+            var bs = document.getElementById('projectBtnSpinner');
+            btn.disabled = true; bt.style.display = 'none'; bs.style.display = 'inline-block';
+
+            fetch('/api/projects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: title, description: desc })
+            })
+            .then(function(r) { if (!r.ok) throw new Error('Proje eklenemedi'); return r.json(); })
+            .then(function() {
+                document.getElementById('projectForm').reset();
+                loadProjectsList();
+                loadProjectsView();
+                showNotification('Proje eklendi!', 'success');
+            })
+            .catch(function(err) { showNotification('Hata: ' + err.message, 'danger'); })
+            .finally(function() { btn.disabled = false; bt.style.display = 'inline'; bs.style.display = 'none'; });
+        }
+
+        function deleteProject(projectId) {
+            if (!confirm('Bu projeyi silmek istediğinize emin misiniz?')) return;
+            fetch('/api/projects/' + projectId, { method: 'DELETE' })
+            .then(function(r) {
+                if (!r.ok) return r.json().then(function(d) { throw new Error(d.message || 'Silinemedi'); });
+                loadProjectsList();
+                loadProjectsView();
+                showNotification('Proje silindi!', 'success');
+            })
+            .catch(function(err) { showNotification('Hata: ' + err.message, 'danger'); });
+        }
+
+        // ==================== KULLANICI ====================
+        function loadUsersView() {
+            var sp = document.getElementById('userLoadingSpinner');
+            var li = document.getElementById('userList');
+            var em = document.getElementById('userEmptyState');
+            sp.style.display = 'block';
+            li.innerHTML = '';
+            em.style.display = 'none';
+
+            fetch('/api/users').then(function(r) { return r.json(); }).then(function(users) {
+                sp.style.display = 'none';
+                document.getElementById('userCount').textContent = users.length;
+                if (users.length === 0) { em.style.display = 'block'; return; }
+                for (var i = 0; i < users.length; i++) {
+                    var u = users[i];
+                    var e = document.createElement('div');
+                    e.className = 'user-item bg-white border rounded';
+                    e.innerHTML = '<div class="d-flex justify-content-between align-items-center">'
+                        + '<div class="d-flex align-items-center gap-3">'
+                        + buildAvatarHtml(u.profileImage, u.name, 'avatar-lg')
+                        + '<div>'
+                        + '<div style="font-weight:600;color:#333;">' + escapeHtml(u.name) + '</div>'
+                        + '<div style="color:#666;font-size:14px;">' + escapeHtml(u.email) + '</div>'
+                        + '<div style="font-size:12px;color:#999;">' + formatDate(u.createdTime) + '</div>'
+                        + '</div></div>'
+                        + '<button class="btn btn-sm btn-outline-danger" onclick="deleteUser(\'' + u.id + '\')">Sil</button>'
+                        + '</div>';
+                    li.appendChild(e);
+                }
+            }).catch(function(err) {
+                sp.style.display = 'none';
+                li.innerHTML = '<div class="alert alert-danger">Hata: ' + err.message + '</div>';
+            });
+        }
+
+        function addUser(e) {
+            e.preventDefault();
+            var name = document.getElementById('userName').value.trim();
+            var email = document.getElementById('userEmail').value.trim();
+            if (!name) { alert('Ad soyad girin!'); return; }
+            if (!email) { alert('Email girin!'); return; }
+
+            var btn = document.getElementById('userSubmitBtn');
+            var bt = document.getElementById('userBtnText');
+            var bs = document.getElementById('userBtnSpinner');
+            btn.disabled = true; bt.style.display = 'none'; bs.style.display = 'inline-block';
+
+            fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name, email: email, profileImage: pendingProfileImage })
+            })
+            .then(function(r) { if (!r.ok) throw new Error('Kullanıcı eklenemedi'); return r.json(); })
+            .then(function() {
+                document.getElementById('userForm').reset();
+                document.getElementById('profilePreview').style.display = 'none';
+                pendingProfileImage = null;
+                loadUsersView();
+                fetch('/api/users').then(function(r) { return r.json(); }).then(function(d) { allUsers = d; renderUserCheckboxes('addUserList', []); });
+                showNotification('Kullanıcı eklendi!', 'success');
+            })
+            .catch(function(err) { showNotification('Hata: ' + err.message, 'danger'); })
+            .finally(function() { btn.disabled = false; bt.style.display = 'inline'; bs.style.display = 'none'; });
+        }
+
+        function deleteUser(userId) {
+            if (!confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) return;
+            fetch('/api/users/' + userId, { method: 'DELETE' })
+            .then(function(r) {
+                if (!r.ok) return r.json().then(function(d) { throw new Error(d.message || 'Silinemedi'); });
+                loadUsersView();
+                fetch('/api/users').then(function(r) { return r.json(); }).then(function(d) { allUsers = d; renderUserCheckboxes('addUserList', []); });
+                showNotification('Kullanıcı silindi!', 'success');
+            })
+            .catch(function(err) { showNotification('Hata: ' + err.message, 'danger'); });
+        }
+
+        // ==================== GÖREV ====================
+        function loadTasks() {
+            var sp = document.getElementById('loadingSpinner');
+            var li = document.getElementById('taskList');
+            var em = document.getElementById('emptyState');
+            sp.style.display = 'block';
+            li.innerHTML = '';
+            em.style.display = 'none';
+
+            fetch(API_URL).then(function(r) {
+                if (!r.ok) throw new Error('Ağ hatası');
+                return r.json();
+            }).then(function(tasks) {
+                sp.style.display = 'none';
+                if (tasks.length === 0) {
+                    em.style.display = 'block';
+                    document.getElementById('taskCount').textContent = '0';
+                    return;
+                }
+                document.getElementById('taskCount').textContent = tasks.length;
+
+                for (var i = 0; i < tasks.length; i++) {
+                    var task = tasks[i];
+                    var el = document.createElement('div');
+                    el.id = 'task-' + task.id;
+
+                    var isOverdue = false;
+                    if (task.completionDate && task.statusCode !== 2) {
+                        var today = new Date();
+                        today.setHours(0,0,0,0);
+                        var compDate = new Date(task.completionDate);
+                        isOverdue = compDate < today;
+                    }
+
+                    el.className = 'task-item bg-white border rounded' + (isOverdue ? ' overdue' : '');
+
+                    // Kullanıcı chip'leri
+                    var usersHtml = '';
+                    if (task.assignedUsers && task.assignedUsers.length > 0) {
+                        usersHtml = '<div class="assigned-users-row">';
+                        for (var j = 0; j < task.assignedUsers.length; j++) {
+                            var au = task.assignedUsers[j];
+                            usersHtml += '<span class="assigned-user-chip">'
+                                + buildAvatarHtml(au.profileImage, au.name, 'avatar-sm')
+                                + ' ' + escapeHtml(au.name) + '</span>';
+                        }
+                        usersHtml += '</div>';
+                    }
+
+                    var projectHtml = task.projectTitle ? '<span class="me-3">' + escapeHtml(task.projectTitle) + '</span>' : '';
+
+                    var startHtml = '';
+                    if (task.startDate) {
+                        startHtml = '<span class="ms-2">Başlangıç: ' + formatShortDate(task.startDate) + '</span>';
+                    }
+
+                    var completionHtml = '';
+                    if (task.completionDate) {
+                        var cls = isOverdue ? ' overdue-text' : '';
+                        completionHtml = '<span class="ms-2' + cls + '">Bitiş: ' + formatShortDate(task.completionDate) + '</span>';
+                    }
+
+                    el.innerHTML = '<div class="d-flex justify-content-between align-items-start">'
+                        + '<div class="flex-grow-1">'
+                        + '<div class="task-title">' + escapeHtml(task.title) + '</div>'
+                        + (task.description ? '<div class="task-description">' + escapeHtml(task.description) + '</div>' : '')
+                        + '<div class="task-meta">'
+                        + '<span class="me-3">' + formatDate(task.createdTime) + '</span>'
+                        + projectHtml
+                        + '<span>' + getStatusBadge(task.statusCode) + '</span>'
+                        + '<span class="ms-2">' + getPriorityBadge(task.priority) + '</span>'
+                        + startHtml
+                        + completionHtml
+                        + '</div>'
+                        + usersHtml
+                        + '</div>'
+                        + '<div class="btn-group-sm d-flex">'
+                        + '<button class="btn btn-sm btn-outline-primary" onclick="openEditModal(\'' + task.id + '\')">Düzenle</button>'
+                        + '<button class="btn btn-sm btn-outline-danger" onclick="deleteTask(\'' + task.id + '\')">Sil</button>'
+                        + '</div></div>';
+                    li.appendChild(el);
+                }
+            }).catch(function(err) {
+                sp.style.display = 'none';
+                li.innerHTML = '<div class="alert alert-danger">Hata: ' + err.message + '</div>';
+            });
+        }
+
+        function addTask(e) {
+            e.preventDefault();
+            var title = document.getElementById('title').value.trim();
+            var desc = document.getElementById('description').value.trim();
+            var projectId = document.getElementById('addProjectSelect').value;
+            var priority = parseInt(document.getElementById('addPriority').value);
+            var startDate = getFpDate(fpAddStart);
+            var completionDate = getFpDate(fpAddComp);
+            if (!title) { alert('Görev başlığını girin!'); return; }
+            if (!projectId) { alert('Proje seçin!'); return; }
+
+            var btn = document.getElementById('submitBtn');
+            var bt = document.getElementById('submitBtnText');
+            var bs = document.getElementById('submitBtnSpinner');
+            btn.disabled = true; bt.style.display = 'none'; bs.style.display = 'inline-block';
 
             fetch(API_URL, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(taskData)
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: title,
+                    description: desc,
+                    projectId: projectId,
+                    priority: priority,
+                    startDate: startDate,
+                    completionDate: completionDate,
+                    userIds: getSelectedUserIds('addUserList')
+                })
             })
-                .then(response => {
-                    if (!response.ok) throw new Error('Görev eklenemedi');
-                    return response.json();
-                })
-                .then(data => {
-                    document.getElementById('taskForm').reset();
-                    loadTasks();
-                    showNotification('Görev başarıyla eklendi!', 'success');
-                })
-                .catch(error => {
-                    showNotification(`Hata: ${error.message}`, 'danger');
-                    console.error('Hata:', error);
-                })
-                .finally(() => {
-                    submitBtn.disabled = false;
-                    submitBtnText.style.display = 'inline';
-                    submitBtnSpinner.style.display = 'none';
-                });
+            .then(function(r) { if (!r.ok) throw new Error('Görev eklenemedi'); return r.json(); })
+            .then(function() {
+                document.getElementById('taskForm').reset();
+                fpAddStart.clear();
+                fpAddComp.clear();
+                renderProjectSelect('addProjectSelect', '');
+                renderUserCheckboxes('addUserList', []);
+                loadTasks();
+                showNotification('Görev eklendi!', 'success');
+            })
+            .catch(function(err) { showNotification('Hata: ' + err.message, 'danger'); })
+            .finally(function() { btn.disabled = false; bt.style.display = 'inline'; bs.style.display = 'none'; });
         }
 
-        // Görev düzenle modalını aç
         function openEditModal(taskId) {
-            fetch(`${API_URL}/${taskId}`)
-                .then(response => {
-                    if (!response.ok) throw new Error('Görev bulunamadı');
-                    return response.json();
-                })
-                .then(task => {
-                    document.getElementById('editId').value = task.id;
-                    document.getElementById('editTitle').value = task.title;
-                    document.getElementById('editDescription').value = task.description || '';
-                    document.getElementById('editStatus').value = task.status;
-                    editModal.show();
-                })
-                .catch(error => {
-                    showNotification(`Hata: ${error.message}`, 'danger');
-                    console.error('Hata:', error);
-                });
+            fetch(API_URL + '/' + taskId).then(function(r) {
+                if (!r.ok) throw new Error('Görev bulunamadı');
+                return r.json();
+            }).then(function(task) {
+                document.getElementById('editId').value = task.id;
+                document.getElementById('editTitle').value = task.title;
+                document.getElementById('editDescription').value = task.description || '';
+
+                var ss = document.getElementById('editStatus');
+                if (task.statusCode === 2) {
+                    ss.innerHTML = '<option value="0">Bekliyor</option><option value="2" selected>Tamamlandı</option>';
+                } else {
+                    ss.innerHTML = '<option value="0">Bekliyor</option><option value="1">Yapılıyor</option><option value="2">Tamamlandı</option>';
+                    ss.value = task.statusCode;
+                }
+
+                document.getElementById('editPriority').value = task.priority;
+
+                // Flatpickr tarih set
+                fpEditStart.setDate(task.startDate || '', false);
+                fpEditComp.setDate(task.completionDate || '', false);
+
+                renderProjectSelect('editProjectSelect', task.projectId);
+
+                var selectedIds = [];
+                if (task.assignedUsers) {
+                    for (var i = 0; i < task.assignedUsers.length; i++) {
+                        selectedIds.push(task.assignedUsers[i].id);
+                    }
+                }
+                renderUserCheckboxes('editUserList', selectedIds);
+
+                editModal.show();
+            }).catch(function(err) { showNotification('Hata: ' + err.message, 'danger'); });
         }
 
-        // Görev güncelle
-        function updateTask(event) {
-            event.preventDefault();
+        function updateTask(e) {
+            e.preventDefault();
+            var id = document.getElementById('editId').value;
+            var title = document.getElementById('editTitle').value.trim();
+            var desc = document.getElementById('editDescription').value.trim();
+            var statusCode = parseInt(document.getElementById('editStatus').value);
+            var priority = parseInt(document.getElementById('editPriority').value);
+            var startDate = getFpDate(fpEditStart);
+            var completionDate = getFpDate(fpEditComp);
+            var projectId = document.getElementById('editProjectSelect').value;
+            if (!title) { alert('Görev başlığını girin!'); return; }
 
-            const id = document.getElementById('editId').value;
-            const title = document.getElementById('editTitle').value.trim();
-            const description = document.getElementById('editDescription').value.trim();
-            const status = document.getElementById('editStatus').value;
+            var bt = document.getElementById('saveBtnText');
+            var bs = document.getElementById('saveBtnSpinner');
+            bt.style.display = 'none'; bs.style.display = 'inline-block';
 
-            if (!title) {
-                alert('Lütfen görev başlığını girin!');
-                return;
-            }
-
-            const saveBtnText = document.getElementById('saveBtnText');
-            const saveBtnSpinner = document.getElementById('saveBtnSpinner');
-
-            saveBtnText.style.display = 'none';
-            saveBtnSpinner.style.display = 'inline-block';
-
-            const taskData = {
-                title: title,
-                description: description,
-                status: status
-            };
-
-            fetch(`${API_URL}/${id}`, {
+            fetch(API_URL + '/' + id, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(taskData)
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: title,
+                    description: desc,
+                    statusCode: statusCode,
+                    priority: priority,
+                    startDate: startDate,
+                    completionDate: completionDate,
+                    projectId: projectId,
+                    userIds: getSelectedUserIds('editUserList')
+                })
             })
-                .then(response => {
-                    if (!response.ok) throw new Error('Görev güncellenemedi');
-                    return response.json();
-                })
-                .then(data => {
-                    editModal.hide();
-                    loadTasks();
-                    showNotification('Görev başarıyla güncellendi!', 'success');
-                })
-                .catch(error => {
-                    showNotification(`Hata: ${error.message}`, 'danger');
-                    console.error('Hata:', error);
-                })
-                .finally(() => {
-                    saveBtnText.style.display = 'inline';
-                    saveBtnSpinner.style.display = 'none';
-                });
+            .then(function(r) { if (!r.ok) throw new Error('Güncellenemedi'); return r.json(); })
+            .then(function() {
+                editModal.hide();
+                loadTasks();
+                showNotification('Görev güncellendi!', 'success');
+            })
+            .catch(function(err) { showNotification('Hata: ' + err.message, 'danger'); })
+            .finally(function() { bt.style.display = 'inline'; bs.style.display = 'none'; });
         }
 
-        // Görev sil
         function deleteTask(taskId) {
-            if (!confirm('Bu görevi silmek istediğinize emin misiniz?')) {
-                return;
-            }
-
-            fetch(`${API_URL}/${taskId}`, {
-                method: 'DELETE'
-            })
-                .then(response => {
-                    if (!response.ok) throw new Error('Görev silinemedi');
-                    loadTasks();
-                    showNotification('Görev başarıyla silindi!', 'success');
-                })
-                .catch(error => {
-                    showNotification(`Hata: ${error.message}`, 'danger');
-                    console.error('Hata:', error);
-                });
-        }
-
-        // Notification göster
-        function showNotification(message, type = 'info') {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-            alertDiv.setAttribute('role', 'alert');
-            alertDiv.innerHTML = `
-                        ${message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
-                    `;
-
-            const container = document.querySelector('.container');
-            container.insertBefore(alertDiv, container.firstChild);
-
-            // 5 saniye sonra otomatik kapat
-            setTimeout(() => {
-                alertDiv.remove();
-            }, 5000);
-        }
-
-        // XSS koruması
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+            if (!confirm('Bu görevi silmek istediğinize emin misiniz?')) return;
+            fetch(API_URL + '/' + taskId, { method: 'DELETE' })
+            .then(function(r) { if (!r.ok) throw new Error('Silinemedi'); loadTasks(); showNotification('Görev silindi!', 'success'); })
+            .catch(function(err) { showNotification('Hata: ' + err.message, 'danger'); });
         }
     </script>
 </body>
