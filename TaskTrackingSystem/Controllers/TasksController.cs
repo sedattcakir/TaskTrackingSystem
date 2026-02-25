@@ -1,10 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaskTrackingSystem.Data;
 using TaskTrackingSystem.Models;
 
 namespace TaskTrackingSystem.Controllers
 {
+    [Authorize]
     public class TasksController : Controller
     {
         private readonly AppDbContext _context;
@@ -14,14 +17,36 @@ namespace TaskTrackingSystem.Controllers
             _context = context;
         }
 
+        private Guid GetCurrentUserId()
+        {
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier);
+            return claim != null ? Guid.Parse(claim.Value) : Guid.Empty;
+        }
+
+        private string GetCurrentRole() {
+            return User.FindFirst(ClaimTypes.Role)?.Value ?? "";
+        }
+
+        private bool IsAdmin() {
+            return GetCurrentRole() == "Admin";
+        }
+
 
         [HttpGet("api/tasks")]
         public async Task<IActionResult> GetTasks()
         {
-            var tasks = await _context.Tasks
+            var query = _context.Tasks
                 .Include(t => t.Project)
                 .Include(t => t.TaskAssignments)
                 .ThenInclude(ta => ta.User)
+                .AsQueryable();
+            if (!IsAdmin())
+            {
+                var userId = GetCurrentUserId();
+                query = query.Where(t => t.TaskAssignments.Any(ta => ta.UserId == userId));
+            }
+
+            var tasks = await query
                 .OrderByDescending(t => t.CreatedTime)
                 .Select(t => new
                 {
@@ -46,7 +71,7 @@ namespace TaskTrackingSystem.Controllers
 
             return Ok(tasks);
         }
-        
+
         [HttpGet("api/tasks/{id}")]
         public async Task<IActionResult> GetTask(Guid id)
         {
@@ -66,7 +91,7 @@ namespace TaskTrackingSystem.Controllers
                     t.StartDate,
                     t.CreatedTime,
                     t.ProjectId,
-                    ProjectTitle = t.Project.Title,
+                    ProjectTitle = t.Project!.Title,
                     AssignedUsers = t.TaskAssignments.Select(ta => new
                     {
                         ta.User.Id,
@@ -79,10 +104,18 @@ namespace TaskTrackingSystem.Controllers
             if (task == null)
                 return NotFound(new { message = "Görev bulunamadı." });
 
+            if (!IsAdmin())
+            {
+                var userId = GetCurrentUserId();
+                if (!task.AssignedUsers.Any(u => u.Id == userId))
+                    return StatusCode(403, new { message = "Bu göreve erişim yetkiniz yok." });
+            }
+
             return Ok(task);
         }
 
         [HttpPost("api/tasks")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateApi([FromBody] CreateTaskDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Title))
@@ -97,6 +130,7 @@ namespace TaskTrackingSystem.Controllers
                 StatusCode = 0,
                 CompletionDate = dto.CompletionDate,
                 StartDate = dto.StartDate,
+                CreatedTime = DateTime.Now
             };
 
             _context.Tasks.Add(task);
@@ -119,27 +153,43 @@ namespace TaskTrackingSystem.Controllers
             return CreatedAtAction(nameof(GetTasks), new { id = task.Id }, task);
         }
 
+
         [HttpPut("api/tasks/{id}")]
         public async Task<IActionResult> EditApi(Guid id, [FromBody] UpdateTaskDto dto)
         {
-            var task = await _context.Tasks.FindAsync(id);
-            if (task == null)
-                return NotFound(new { message = "Görev bulunamadı." });
+            var task = await _context.Tasks
+                .Include(t => t.TaskAssignments)
+                .FirstOrDefaultAsync(t => t.Id == id);
 
-            if (task.StatusCode == 2 && dto.StatusCode == 1)
-                return BadRequest(new { message = "Tamamlanmış görev tekrar 'Yapılıyor' durumuna alınamaz." });
+            if (task == null)
+            {
+                return NotFound(new { message = "Görev bulunamadı." });
+            }
+
+            if(!IsAdmin())
+            {
+                var userId = GetCurrentUserId();
+                if (!task.TaskAssignments.Any(ta => ta.UserId == userId))
+                    return StatusCode(403, new { message = "Bu göreve erişim yetkiniz yok." });
+                task.StatusCode = dto.StatusCode;
+                await _context.SaveChangesAsync();
+                return Ok(task);
+            }
+
+            if(task.StatusCode == 2 && dto.StatusCode == 1)
+            {
+                return BadRequest(new { message = "Tamamlanmış bir görevin durumunu değiştiremezsiniz." });
+            }
 
             task.Title = dto.Title;
             task.Description = dto.Description;
-            task.StatusCode = dto.StatusCode;
+            task.ProjectId = dto.ProjectId;
             task.PriorityCode = dto.Priority;
+            task.StatusCode = dto.StatusCode;
             task.CompletionDate = dto.CompletionDate;
             task.StartDate = dto.StartDate;
 
-            var oldAssignments = _context.TaskAssignments
-                .Where(ta => ta.TaskId == id)
-                .ToList();
-
+            var oldAssignments = _context.TaskAssignments.Where(ta => ta.TaskId == id).ToList();
             _context.TaskAssignments.RemoveRange(oldAssignments);
 
             if (dto.UserIds != null && dto.UserIds.Any())
@@ -154,58 +204,91 @@ namespace TaskTrackingSystem.Controllers
                     });
                 }
             }
-                await _context.SaveChangesAsync();
-                return Ok(task);
-            }
+            await _context.SaveChangesAsync();
+            return Ok(task);
+        }
 
         [HttpDelete("api/tasks/{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteApi(Guid id)
         {
-            try
-            {
-                var task = new TaskItem { Id = id };
-
-                _context.Tasks.Attach(task);
-                _context.Tasks.Remove(task);
-                await _context.SaveChangesAsync();
-
-                return Ok(new { message = "Atamalar ve görevler silinmiştir." });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.InnerException?.Message ?? ex.Message);
-            }
+            var task = await _context.Tasks.FindAsync(id);
+            if (task == null)
+                return NotFound(new { message = "Görev bulunamadı." });
+            var assignments = _context.TaskAssignments.Where(ta => ta.TaskId == id);
+            _context.TaskAssignments.RemoveRange(assignments);
+            _context.Tasks.Remove(task);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Görev silindi." });
         }
 
         [HttpGet("api/users")]
         public async Task<IActionResult> GetUsers()
         {
-            var users = await _context.Users.OrderByDescending(u => u.Name).ToListAsync();
+            var users = await _context.Users
+                .OrderBy(u => u.Name)
+                .Select(u => new
+                {
+                    u.Id,
+                    u.Name,
+                    u.Email,
+                    u.ProfileImage,
+                    u.Role,
+                    u.CreatedTime
+                })
+                .ToListAsync();
             return Ok(users);
         }
 
         [HttpPost("api/users")]
-        public async Task<IActionResult> CreateUser([FromBody] User user)
+        [Authorize("Admin")]
+        public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
         {
-            if (string.IsNullOrWhiteSpace(user.Name))
+            if (string.IsNullOrWhiteSpace(dto.Name))
                 return BadRequest(new { message = "Kullanıcı adı zorunludur." });
 
-            if (string.IsNullOrWhiteSpace(user.Email))
+            if (string.IsNullOrWhiteSpace(dto.Email))
                 return BadRequest(new { message = "Email zorunludur." });
 
-            user.Id = Guid.NewGuid();
-            user.CreatedTime = DateTime.Now;
+            if (string.IsNullOrWhiteSpace(dto.Password))
+                return BadRequest(new { message = "Parola zorunludur." });
+
+            var exists = await _context.Users.AnyAsync(u => u.Email == dto.Email);
+            if (exists)
+            {
+                return BadRequest(new { message = "Bu email zaten kullanılıyor." });
+            }
+
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                Name = dto.Name,
+                Email = dto.Email,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+                Role = dto.Role ?? "Personel",
+                ProfileImage = dto.ProfileImage,
+                CreatedTime = DateTime.Now
+            };
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
             return Ok(user);
+
         }
 
         [HttpDelete("api/users/{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteUser(Guid id)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
+            await _context.TaskAssignments
+                .Where(ta => ta.UserId == id)
+                .ExecuteDeleteAsync();
+
+            var deleted = await _context.Users
+                .Where(u => u.Id == id)
+                .ExecuteDeleteAsync();
+
+            if (deleted == 0)
                 return NotFound(new { message = "Kullanıcı bulunamadı." });
 
             return Ok(new { message = "Kullanıcı silindi." });
@@ -213,11 +296,12 @@ namespace TaskTrackingSystem.Controllers
         [HttpGet("api/projects")]
         public async Task<IActionResult> GetProjects()
         {
-            var projects = await _context.Projects.OrderByDescending(p => p.Title).ToListAsync();
+            var projects = await _context.Projects.OrderByDescending(p => p.CreatedTime).ToListAsync();
             return Ok(projects);
         }
 
         [HttpPost("api/projects")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateProject([FromBody] Project project)
         {
             if (string.IsNullOrWhiteSpace(project.Title))
@@ -230,7 +314,9 @@ namespace TaskTrackingSystem.Controllers
             return Ok(project);
         }
 
+
         [HttpDelete("api/projects/{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteProject(Guid id)
         {
             var project = await _context.Projects.FindAsync(id);
@@ -244,6 +330,18 @@ namespace TaskTrackingSystem.Controllers
             _context.Projects.Remove(project);
             await _context.SaveChangesAsync();
             return Ok(new { message = "Proje silindi." });
+        }
+
+        [HttpGet("api/me")]
+        public IActionResult GetCurrentUser()
+        {
+            return Ok(new
+            {
+                Id = GetCurrentUserId(),
+                Name = User.FindFirst(ClaimTypes.Name)?.Value,
+                Email = User.FindFirst(ClaimTypes.Email)?.Value,
+                Role = GetCurrentRole()
+            });
         }
 
         [HttpGet("api/statuses")]
