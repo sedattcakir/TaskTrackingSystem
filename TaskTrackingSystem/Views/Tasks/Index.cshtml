@@ -10,7 +10,6 @@
     <title>Görev Takip Sistemi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css">
     <style>
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -179,7 +178,6 @@
             font-weight: bold;
         }
 
-        /* Profil Resmi */
         .avatar-sm {
             width: 22px;
             height: 22px;
@@ -246,7 +244,6 @@
             gap: 15px;
         }
 
-        /* Flatpickr özel */
         .flatpickr-input {
             background: #fff !important;
         }
@@ -265,7 +262,6 @@
             </div>
         </div>
 
-        <!-- ==================== GÖREVLER BÖLÜMÜ ==================== -->
         <div id="tasksSection">
             <div class="card">
                 <div class="card-header">
@@ -279,7 +275,6 @@
                                     <div class="mb-3">
                                         <label for="title" class="form-label">Görev Başlığı *</label>
                                         <input type="text" class="form-control" id="title" placeholder="Görev başlığını girin" required maxlength="100">
-                                        <small class="text-muted">En fazla 100 karakter</small>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -294,7 +289,6 @@
                             <div class="mb-3">
                                 <label for="description" class="form-label">Açıklama</label>
                                 <textarea class="form-control" id="description" rows="3" placeholder="Görev açıklamasını girin..." maxlength="500"></textarea>
-                                <small class="text-muted">En fazla 500 karakter</small>
                             </div>
                             <div class="row">
                                 <div class="col-md-4">
@@ -460,8 +454,6 @@
             </div>
         </div>
 
-    </div><!-- container sonu -->
-    <!-- Modal: Görev Düzenle -->
     <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -548,7 +540,6 @@
         var pendingProfileImage = null;
         var fpAddStart, fpAddComp, fpEditStart, fpEditComp;
 
-        // ==================== BAŞLATMA ====================
         document.addEventListener('DOMContentLoaded', function () {
             editModal = new bootstrap.Modal(document.getElementById('editModal'));
             fetch('/api/users').then(function(r) { return r.json(); }).then(function(d) { allUsers = d; renderUserCheckboxes('addUserList', []); });
@@ -559,7 +550,6 @@
             document.getElementById('projectForm').addEventListener('submit', addProject);
             document.getElementById('userForm').addEventListener('submit', addUser);
 
-            // Flatpickr başlatma
             var fpConfig = {
                 locale: 'tr',
                 dateFormat: 'Y-m-d',
@@ -846,7 +836,6 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: name, email: email, profileImage: pendingProfileImage })
             })
-            .then(function(r) { if (!r.ok) throw new Error('Kullanıcı eklenemedi'); return r.json(); })
             .then(function() {
                 document.getElementById('userForm').reset();
                 document.getElementById('profilePreview').style.display = 'none';
@@ -871,7 +860,6 @@
             .catch(function(err) { showNotification('Hata: ' + err.message, 'danger'); });
         }
 
-        // ==================== GÖREV ====================
         function loadTasks() {
             var sp = document.getElementById('loadingSpinner');
             var li = document.getElementById('taskList');
@@ -907,7 +895,6 @@
 
                     el.className = 'task-item bg-white border rounded' + (isOverdue ? ' overdue' : '');
 
-                    // Kullanıcı chip'leri
                     var usersHtml = '';
                     if (task.assignedUsers && task.assignedUsers.length > 0) {
                         usersHtml = '<div class="assigned-users-row">';
@@ -1020,11 +1007,8 @@
                 }
 
                 document.getElementById('editPriority').value = task.priority;
-
-                // Flatpickr tarih set
                 fpEditStart.setDate(task.startDate || '', false);
                 fpEditComp.setDate(task.completionDate || '', false);
-
                 renderProjectSelect('editProjectSelect', task.projectId);
 
                 var selectedIds = [];

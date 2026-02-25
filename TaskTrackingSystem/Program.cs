@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using TaskTrackingSystem.Data;
 
@@ -11,9 +10,6 @@ builder.Services.AddControllersWithViews()
         options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     });
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -25,8 +21,6 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseSwagger();
-app.UseSwaggerUI();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
@@ -36,5 +30,4 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Tasks}/{action=Index}/{id?}");
 
-app.MapControllers();
 app.Run();
