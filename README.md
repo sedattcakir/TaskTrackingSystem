@@ -1,13 +1,56 @@
-Bu projeyi geliştirirken mümkün olduğunca yapay zekâdan doğrudan kod üretimi şeklinde yoğun destek almamaya özen gösterdim. Özellikle verilen Word dokümanında yer alan bazı teknik terimler ve kavramlar başlangıçta zorlayıcı oldu. ASP.NET MVC konusunda geçmişten gelen bir aşinalığım bulunmasına rağmen uzun süredir aktif olarak kullanmadığım için tekrar çalışmam gerekti. Bu süreçte hem Microsoft’un resmi dokümantasyonlarını inceleyerek hem de dil yapısını yeniden öğrenerek ilerledim. Yer yer ChatGPT’den kavramsal açıklamalar ve konu pekiştirmeye yönelik destek aldım.
+Roller ve Yetkiler
 
-Veritabanı tasarımında kullanılan Id uniqueidentifier (GUID) Primary Key, otomatik üretilir yapısını, GUID kullanımına dair bir diğer stajyer arkadaşım Sude’nin tavsiyesi üzerine tercih ettim. GUID konusunu ayrıca araştırarak projeye entegre ettim.
+Admin:
 
-DTO (Data Transfer Object) yapısının neden kullanıldığı konusunu araştırarak öğrendim ve projede uyguladım. Ancak public class UpdateFullTaskDto sınıfını bireysel olarak tasarlamakta zorlandığım için bu kısmı yapay zekâdan destek alarak oluşturdum. Sonrasında yapının ne işe yaradığını ve neden gerekli olduğunu inceleyerek anlamlandırmaya çalıştım.
+* Tüm görevleri görüntüleyebilir
 
-public class AppDbContext : DbContext yapısını da yapay zekâ desteğiyle oluşturdum. Entity Framework Core’un çalışma mantığını ve DbContext’in projedeki rolünü ayrıca araştırarak kavramaya çalıştım.
+* Görev ekleyebilir, düzenleyebilir ve silebilir
 
-MVC Controller yapısını oluştururken Microsoft’un resmi dokümantasyon sayfasındaki örnekleri inceledim ve bu örneklerden faydalanarak kendi kod yapımı oluşturdum.
+* Görev içeriğinde tüm alanları düzenleyebilir
 
-API Controller kısmında ise kodu nasıl daha iyi ve düzenli hale getirebileceğim konusunda genel iyileştirme önerileri almak amacıyla yapay zekâdan destek aldım. Önerilen yapıyı doğrudan kopyalamak yerine, araştırarak ve anlamaya çalışarak projeye entegre etmeye özen gösterdim. Bu süreçte mümkün olduğunca sınırlı ve bilinçli kullanım hedefledim.
+* Projelere ekleme ve silme işlemi yapabilir
 
-Genel olarak projeyi geliştirirken temel amacım, hazır kod üretmekten ziyade konuları öğrenerek ve anlayarak ilerlemek oldu. Yapay zekâ ve resmi dokümantasyonları destekleyici kaynak olarak kullandım; ancak her aşamada mantığını kavramaya çalışarak uygulama yapmaya özen gösterdim.
+* Tüm projeleri görüntüleyebilir
+
+* Kullanıcı ekleyebilir ve silebilir
+
+* Tüm kullanıcıları görüntüleyebilir
+
+Personel:
+
+* Sadece kendisine atanan görevleri görüntüleyebilir
+
+* Görevlerde yalnızca durum alanını güncelleyebilir
+
+* Görev içeriğinde başka değişiklik yapamaz
+
+* Tüm projeleri görüntüleyebilir ancak işlem yapamaz
+
+
+Güvenlik ve Kimlik Doğrulama:
+
+* Kullanıcı oluşturma sırasında girilen şifre API’ye düz metin olarak gelir. Controller, işlemi yapan kullanıcının Admin rolünde olup olmadığını kontrol eder.
+
+* Kontrol sağlandıktan sonra şifre BCrypt kütüphanesi ile hash’lenir. BCrypt her şifre için rastgele bir salt üretir ve hash içine gömer. Böylece aynı şifreyi kullanan kullanıcıların veritabanındaki hash değerleri farklı olur.
+
+Login Akışı:
+
+* Kullanıcı giriş yaparken email ve şifre bilgileri alınır. Girilen şifre veritabanındaki hash ile karşılaştırılır. Doğrulama başarılı olursa kullanıcı bilgilerini içeren bir Claim listesi oluşturulur:
+
+        *Kullanıcı ID
+
+        *Kullanıcı Adı
+
+        *Email
+
+        *Rol (Admin / Personel)
+
+*Bu bilgiler şifreli bir cookie içinde saklanır ve her istekte sunucuya otomatik gönderilir.
+
+*Sunucu cookie’yi çözerek Claim bilgilerini okur ve yetkilendirme kontrollerini uygular:
+
+*[Authorize] → Kullanıcı giriş yapmış mı kontrol eder
+
+*[Authorize(Roles)] → Kullanıcının rolüne göre erişim sağlar
+
+*Çıkış yapıldığında cookie silinir ve oturum sonlandırılır.

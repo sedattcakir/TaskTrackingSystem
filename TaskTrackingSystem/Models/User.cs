@@ -16,7 +16,18 @@ namespace TaskTrackingSystem.Models
         [Required]
         [MaxLength(150)]
         public string Email { get; set; } = string.Empty;
+        public string PasswordHash { get; set; } = string.Empty;
+        public string Role { get; set; } = "Personel";
 
         public DateTime CreatedTime { get; set; } = DateTime.Now;
+    }
+
+    public class CreateUserDto
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string? Role { get; set; }
+        public string? ProfileImage { get; set; }
     }
 }
