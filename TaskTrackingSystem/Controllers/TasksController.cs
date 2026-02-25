@@ -154,17 +154,9 @@ namespace TaskTrackingSystem.Controllers
                     });
                 }
             }
-
-            try
-            {
                 await _context.SaveChangesAsync();
                 return Ok(task);
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.InnerException?.Message ?? ex.Message);
-            }
-        }
 
         [HttpDelete("api/tasks/{id}")]
         public async Task<IActionResult> DeleteApi(Guid id)
@@ -175,7 +167,6 @@ namespace TaskTrackingSystem.Controllers
 
                 _context.Tasks.Attach(task);
                 _context.Tasks.Remove(task);
-
                 await _context.SaveChangesAsync();
 
                 return Ok(new { message = "Atamalar ve görevler silinmiştir." });
@@ -210,7 +201,6 @@ namespace TaskTrackingSystem.Controllers
             return Ok(user);
         }
 
-
         [HttpDelete("api/users/{id}")]
         public async Task<IActionResult> DeleteUser(Guid id)
         {
@@ -218,14 +208,8 @@ namespace TaskTrackingSystem.Controllers
             if (user == null)
                 return NotFound(new { message = "Kullanıcı bulunamadı." });
 
-            var assignments = _context.TaskAssignments.Where(ta => ta.UserId == id);
-            _context.TaskAssignments.RemoveRange(assignments);
-
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
             return Ok(new { message = "Kullanıcı silindi." });
         }
-
         [HttpGet("api/projects")]
         public async Task<IActionResult> GetProjects()
         {
@@ -241,7 +225,6 @@ namespace TaskTrackingSystem.Controllers
 
             project.Id = Guid.NewGuid();
             project.CreatedTime = DateTime.Now;
-
             _context.Projects.Add(project);
             await _context.SaveChangesAsync();
             return Ok(project);
