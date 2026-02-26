@@ -35,12 +35,10 @@ namespace TaskTrackingSystem.Controllers
             string? userIp = HttpContext.Connection.RemoteIpAddress?.ToString();
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
 
-            // Email veya şifre boşsa
             if (string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Password))
             {
                 ModelState.AddModelError(string.Empty, "Email ve şifre zorunludur..");
 
-                // Audit log
                 _context.AuditLogs.Add(new AuditLog
                 {
                     UserEmail = dto.Email ?? "Bilinmiyor",
