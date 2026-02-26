@@ -54,7 +54,6 @@ namespace TaskTrackingSystem.Controllers
             {
                 ModelState.AddModelError(string.Empty, "Yanlış email veya şifre.");
 
-                // Audit log
                 _context.AuditLogs.Add(new AuditLog
                 {
                     UserEmail = dto.Email,
@@ -70,7 +69,6 @@ namespace TaskTrackingSystem.Controllers
             {
                 ModelState.AddModelError(string.Empty, $"Hesap kilitli. {user.LockoutEnd.Value.ToLocalTime()} tarihine kadar bekleyin.");
 
-                // Audit log
                 _context.AuditLogs.Add(new AuditLog
                 {
                     UserEmail = dto.Email,
@@ -94,7 +92,6 @@ namespace TaskTrackingSystem.Controllers
 
                 ModelState.AddModelError(string.Empty, "Yanlış email veya şifre.");
 
-                // Audit log
                 _context.AuditLogs.Add(new AuditLog
                 {
                     UserEmail = dto.Email,
