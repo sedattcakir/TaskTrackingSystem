@@ -148,7 +148,6 @@ namespace TaskTrackingSystem.Controllers
                     });
                 }
                 await _context.SaveChangesAsync();
-            }
 
             return CreatedAtAction(nameof(GetTasks), new { id = task.Id }, task);
         }
@@ -162,9 +161,7 @@ namespace TaskTrackingSystem.Controllers
                 .FirstOrDefaultAsync(t => t.Id == id);
 
             if (task == null)
-            {
                 return NotFound(new { message = "Görev bulunamadı." });
-            }
 
             if(!IsAdmin())
             {
@@ -179,7 +176,6 @@ namespace TaskTrackingSystem.Controllers
             if(task.StatusCode == 2 && dto.StatusCode == 1)
             {
                 return BadRequest(new { message = "Tamamlanmış bir görevin durumunu değiştiremezsiniz." });
-            }
 
             task.Title = dto.Title;
             task.Description = dto.Description;
@@ -192,8 +188,6 @@ namespace TaskTrackingSystem.Controllers
             var oldAssignments = _context.TaskAssignments.Where(ta => ta.TaskId == id).ToList();
             _context.TaskAssignments.RemoveRange(oldAssignments);
 
-            if (dto.UserIds != null && dto.UserIds.Any())
-            {
                 foreach (var userId in dto.UserIds)
                 {
                     _context.TaskAssignments.Add(new TaskAssignment
@@ -255,9 +249,7 @@ namespace TaskTrackingSystem.Controllers
 
             var exists = await _context.Users.AnyAsync(u => u.Email == dto.Email);
             if (exists)
-            {
                 return BadRequest(new { message = "Bu email zaten kullanılıyor." });
-            }
 
             var user = new User
             {
@@ -273,7 +265,6 @@ namespace TaskTrackingSystem.Controllers
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
             return Ok(user);
-
         }
 
         [HttpDelete("api/users/{id}")]
