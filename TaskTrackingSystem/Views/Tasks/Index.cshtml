@@ -284,6 +284,7 @@
                 <button class="tab-btn active" onclick="showTab('tasks')">Görevler</button>
                 <button class="tab-btn" onclick="showTab('projects')">Projeler</button>
                 <button class="tab-btn" id="usersTabBtn" onclick="showTab('users')">Kullanıcılar</button>
+                <button class="tab-btn" id="auditTabBtn" onclick="showTab('audit')">İşlemler</button>
             </div>
         </div>
 
@@ -292,6 +293,7 @@
                 <div class="card-header-dark"><h5 class="mb-0">Yeni Görev Ekle</h5></div>
                 <div class="card-body">
                     <form id="taskForm">
+                        <div id="taskErrorAlert" class="alert alert-danger" style="display:none;"></div>
                         <div class="form-section">
                             <div class="row">
                                 <div class="col-md-6">
@@ -325,13 +327,13 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="mb-3">
+                                    <div class="mb-3 position-relative">
                                         <label class="form-label">Başlangıç Tarihi</label>
                                         <input type="text" class="form-control" id="addStartDate" placeholder="Başlangıç Tarihi Giriniz">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="mb-3">
+                                    <div class="mb-3 position-relative">
                                         <label class="form-label">Tamamlanma Tarihi</label>
                                         <input type="text" class="form-control" id="addCompletionDate" placeholder="Tamamlanma Tarihi Giriniz">
                                     </div>
@@ -378,11 +380,11 @@
                 <div class="card-body">
                     <form id="projectForm">
                         <div class="form-section">
-                            <div class="mb-3">
+                            <div class="mb-3 position-relative">
                                 <label class="form-label">Proje Başlığı *</label>
                                 <input type="text" class="form-control" id="projectTitle" placeholder="Proje başlığını giriniz" required maxlength="200">
                             </div>
-                            <div class="mb-3">
+                            <div class="mb-3 position-relative">
                                 <label class="form-label">Açıklama</label>
                                 <textarea class="form-control" id="projectDescription" rows="2" placeholder="Proje açıklamasını giriniz"></textarea>
                             </div>
@@ -413,6 +415,8 @@
             </div>
         </div>
 
+
+
        
         <div id="usersSection" style="display:none;">
             <div class="card" id="userFormCard">
@@ -422,21 +426,21 @@
                         <div class="form-section">
                             <div class="row">
                                 <div class="col-md-3">
-                                    <div class="mb-3">
+                                    <div class="mb-3 position-relative">
                                         <label class="form-label">Ad Soyad *</label>
                                         <input type="text" class="form-control" id="userName" placeholder="Ad soyad" required maxlength="100" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')">
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <div class="mb-3">
+                                    <div class="mb-3 position-relative">
                                         <label class="form-label">Email *</label>
                                         <input type="email" class="form-control" id="userEmail" placeholder="Email" required maxlength="150" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')">
                                     </div>
                                 </div>
                                 <div class="col-md-2">
-                                    <div class="mb-3">
+                                    <div class="mb-3 position-relative">
                                         <label class="form-label">Şifre *</label>
-                                        <input type="password" class="form-control" id="userPassword" placeholder="Şifre" required autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')">
+                                        <input type="password" class="form-control" id="userPassword" placeholder="Şifre" required autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')" required minlength="8">
                                     </div>
                                 </div>
                                 <div class="col-md-2">
@@ -449,7 +453,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-2">
-                                    <div class="mb-3">
+                                    <div class="mb-3 position-relative">
                                         <label class="form-label">Profil Resmi</label>
                                         <div class="profile-upload-area">
                                             <img id="profilePreview" class="profile-preview" src="" alt="önizleme">
@@ -488,6 +492,21 @@
             </div>
         </div>
 
+        <div id="auditSection" style="display:none;">
+            <div class="card">
+                <div class="card-header-dark d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Audit Loglar</h5>
+                    <span id="auditCount" class="badge bg-white text-dark">0</span>
+                </div>
+                <div class="card-body">
+                    <div id="auditList"></div>
+                    <div class="empty-state" id="auditEmptyState" style="display:none;">
+                        <p class="fs-5">Henüz log kaydı yok</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
    
@@ -501,7 +520,7 @@
                 <form id="editForm">
                     <div class="modal-body">
                         <input type="hidden" id="editId">
-                        <div class="mb-3">
+                        <div class="mb-3 position-relative">
                             <label class="form-label">Görev Başlığı</label>
                             <input type="text" class="form-control" id="editTitle" required maxlength="100">
                         </div>
@@ -533,13 +552,13 @@
                         </div>
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="mb-3">
+                                <div class="mb-3 position-relative">
                                     <label class="form-label">Başlangıç Tarihi</label>
                                     <input type="text" class="form-control" id="editStartDate" placeholder="Tarih seçin">
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="mb-3">
+                                <div class="mb-3 position-relative">
                                     <label class="form-label">Tamamlanma Tarihi</label>
                                     <input type="text" class="form-control" id="editCompletionDate" placeholder="Tarih seçin">
                                 </div>
@@ -618,6 +637,7 @@
                 document.getElementById('taskFormCard').style.display = 'none';
                 document.getElementById('projectFormCard').style.display = 'none';
                 document.getElementById('usersTabBtn').style.display = 'none';
+				document.getElementById('auditTabBtn').style.display = 'none';
             }
         }
 
@@ -639,15 +659,16 @@
             document.getElementById('tasksSection').style.display = 'none';
             document.getElementById('projectsSection').style.display = 'none';
             document.getElementById('usersSection').style.display = 'none';
+			document.getElementById('auditSection').style.display = 'none';
 
-            if (tab === 'tasks') {
+            if (tab == 'tasks') {
                 document.getElementById('tasksSection').style.display = 'block';
                 document.querySelectorAll('.tab-btn')[0].classList.add('active');
-            } else if (tab === 'projects') {
+            } else if (tab == 'projects') {
                 document.getElementById('projectsSection').style.display = 'block';
                 document.querySelectorAll('.tab-btn')[1].classList.add('active');
                 loadProjectsView();
-            } else {
+            } else if (tab =='users') {
                 document.getElementById('usersSection').style.display = 'block';
                 document.querySelectorAll('.tab-btn')[2].classList.add('active');
                 loadUsersView();
@@ -659,7 +680,6 @@
         }
 
       
-
       
         function formatDate(d) {
             return new Date(d).toLocaleDateString('tr-TR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
@@ -816,7 +836,7 @@
                 }
             }).catch(function(err) {
                 sp.style.display = 'none';
-                li.innerHTML = '<div class="alert alert-danger">Hata: ' + err.message + '</div>';
+                li.innerHTML = '<div class="alert alert-warning">Projeler yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.</div>';
             });
         }
 
@@ -856,7 +876,7 @@
                 loadProjectsView();
                 showNotification('Proje silindi!', 'success');
             })
-            .catch(function(err) { showNotification('Hata: ' + err.message, 'danger'); });
+            .catch(function(err) { showNotification('Proje silinirken bir hata oluştu.', 'danger'); });
         }
 
      
@@ -892,7 +912,7 @@
                 }
             }).catch(function(err) {
                 sp.style.display = 'none';
-                li.innerHTML = '<div class="alert alert-danger">Hata: ' + err.message + '</div>';
+                li.innerHTML = '<div class="alert alert-warning">Kullanıcılar yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.</div>';
             });
         }
 
@@ -902,9 +922,12 @@
             var email = document.getElementById('userEmail').value.trim();
             var password = document.getElementById('userPassword').value;
             var role = document.getElementById('userRole').value;
-            if (!name) { alert('Ad soyad girin!'); return; }
-            if (!email) { alert('Email girin!'); return; }
-            if (!password) { alert('Şifre girin!'); return; }
+            if (!name) { alert('Ad soyad giriniz!'); return; }
+            if (!email) { alert('Email giriniz!'); return; }
+            if (!password) { alert('Şifre giriniz!'); return; }
+            if (password.length < 8) { showNotification('Şifre en az 8 karakter olmalı.', 'danger'); return; }
+            if (!/[A-Z]/.test(password)) { showNotification('Şifre en az 1 büyük harf içermeli.', 'danger'); return; }
+            if (!/[0-9]/.test(password)) { showNotification('Şifre en az 1 rakam içermeli.', 'danger'); return; }
 
             var btn = document.getElementById('userSubmitBtn');
             var bt = document.getElementById('userBtnText');
@@ -941,7 +964,7 @@
                 fetch('/api/users').then(function(r) { return r.json(); }).then(function(d) { allUsers = d; renderUserCheckboxes('addUserList', []); });
                 showNotification('Kullanıcı silindi!', 'success');
             })
-            .catch(function(err) { showNotification('Hata: ' + err.message, 'danger'); });
+            .catch(function(err) { showNotification('Kullanıcı silinirken bir hata oluştu.', 'danger'); });
         }
 
         function loadTasks() {
@@ -1031,25 +1054,42 @@
                 }
             }).catch(function(err) {
                 sp.style.display = 'none';
-                li.innerHTML = '<div class="alert alert-danger">Hata: ' + err.message + '</div>';
+                li.innerHTML = '<div class="alert alert-warning">Görevler yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.</div>';
             });
         }
 
         function addTask(e) {
             e.preventDefault();
+
+
+            var errorDiv = document.getElementById('taskErrorAlert');
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = '';
+
             var title = document.getElementById('title').value.trim();
             var desc = document.getElementById('description').value.trim();
             var projectId = document.getElementById('addProjectSelect').value;
             var priority = parseInt(document.getElementById('addPriority').value);
             var startDate = getFpDate(fpAddStart);
             var completionDate = getFpDate(fpAddComp);
-            if (!title) { alert('Görev başlığını giriniz!'); return; }
-            if (!projectId) { alert('Proje seçiniz!'); return; }
+
+            if (!title) {
+                errorDiv.textContent = 'Görev başlığını giriniz!';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            if (!projectId) {
+                errorDiv.textContent = 'Proje seçiniz!';
+                errorDiv.style.display = 'block';
+                return;
+            }
 
             var btn = document.getElementById('submitBtn');
             var bt = document.getElementById('submitBtnText');
             var bs = document.getElementById('submitBtnSpinner');
-            btn.disabled = true; bt.style.display = 'none'; bs.style.display = 'inline-block';
+            btn.disabled = true;
+            bt.style.display = 'none';
+            bs.style.display = 'inline-block';
 
             fetch(API_URL, {
                 method: 'POST',
@@ -1064,6 +1104,14 @@
                     userIds: getSelectedUserIds('addUserList')
                 })
             })
+            .then(function(r) {
+                if (!r.ok) {
+                    return r.json().then(function(d) {
+                        throw new Error(d.message || 'Görev eklenemedi');
+                    });
+                }
+                return r.json();
+            })
             .then(function() {
                 document.getElementById('taskForm').reset();
                 fpAddStart.clear();
@@ -1073,8 +1121,15 @@
                 loadTasks();
                 showNotification('Görev eklendi!', 'success');
             })
-            .catch(function(err) { showNotification('Hata: ' + err.message, 'danger'); })
-            .finally(function() { btn.disabled = false; bt.style.display = 'inline'; bs.style.display = 'none'; });
+            .catch(function(err) {
+                errorDiv.textContent = err.message || 'Görev eklenirken bir hata oluştu.';
+                errorDiv.style.display = 'block';
+            })
+            .finally(function() {
+                btn.disabled = false;
+                bt.style.display = 'inline';
+                bs.style.display = 'none';
+            });
         }
 
         function openEditModal(taskId) {
@@ -1189,8 +1244,39 @@
             if (!confirm('Bu görevi silmek istediğinize emin misiniz?')) return;
             fetch(API_URL + '/' + taskId, { method: 'DELETE' })
             .then(function(r) { if (!r.ok) throw new Error('Silinemedi'); loadTasks(); showNotification('Görev silindi!', 'success'); })
-            .catch(function(err) { showNotification('Hata: ' + err.message, 'danger'); });
+            .catch(function(err) { showNotification('Görev silinirken bir hata oluştu.', 'danger'); });
         }
+        function loadAuditLogs() {
+            var li = document.getElementById('auditList');
+            var em = document.getElementById('auditEmptyState');
+            li.innerHTML = '<div class="text-center p-3"><div class="spinner-border text-dark"></div></div>';
+            em.style.display = 'none';
+
+            fetch('/api/auditlogs').then(function(r) { return r.json(); }).then(function(logs) {
+                document.getElementById('auditCount').textContent = logs.length;
+                if (logs.length === 0) { li.innerHTML = ''; em.style.display = 'block'; return; }
+                var html = '';
+                for (var i = 0; i < logs.length; i++) {
+                    var log = logs[i];
+                    var iconColor = log.action.indexOf('Başarılı') >= 0 ? '#28a745' :
+                                    log.action.indexOf('Başarısız') >= 0 ? '#dc3545' :
+                                    log.action.indexOf('silindi') >= 0 ? '#dc3545' :
+                                    log.action.indexOf('eklendi') >= 0 ? '#17a2b8' : '#666';
+                    html += '<div class="task-item border rounded" style="border-left-color:' + iconColor + ' !important;">'
+                        + '<div class="d-flex justify-content-between align-items-center">'
+                        + '<div>'
+                        + '<div style="font-weight:600;color:#1a1a1a;">' + escapeHtml(log.action) + '</div>'
+                        + '<div style="font-size:13px;color:#666;">Kullanıcı: ' + escapeHtml(log.userEmail) + ' &bull; IP: ' + escapeHtml(log.ipAddress || '-') + '</div>'
+                        + '</div>'
+                        + '<div style="font-size:12px;color:#999;white-space:nowrap;">' + formatDate(log.timestamp) + '</div>'
+                        + '</div></div>';
+                }
+                li.innerHTML = html;
+            }).catch(function() {
+                li.innerHTML = '<div class="alert alert-warning">Loglar yüklenirken bir hata oluştu.</div>';
+            });
+        }
+
     </script>
 </body>
 </html>

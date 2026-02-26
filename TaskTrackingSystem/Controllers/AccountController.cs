@@ -32,19 +32,96 @@ namespace TaskTrackingSystem.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Login(LoginDto dto)
         {
+            string? userIp = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+
+            // Email veya şifre boşsa
             if (string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Password))
             {
                 ModelState.AddModelError(string.Empty, "Email ve şifre zorunludur..");
-                return View();
+
+                // Audit log
+                _context.AuditLogs.Add(new AuditLog
+                {
+                    UserEmail = dto.Email ?? "Bilinmiyor",
+                    Action = "Başarısız login (boş alan)",
+                    IpAddress = userIp
+                });
+                await _context.SaveChangesAsync();
+
+                return View(dto);
             }
 
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
-
-            if (user == null || string.IsNullOrEmpty(user.PasswordHash) || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+            if (user == null || string.IsNullOrEmpty(user.PasswordHash))
             {
-                ModelState.AddModelError(string.Empty, "Yanlış email veya şifre .");
-                return View();
+                ModelState.AddModelError(string.Empty, "Yanlış email veya şifre.");
+
+                // Audit log
+                _context.AuditLogs.Add(new AuditLog
+                {
+                    UserEmail = dto.Email,
+                    Action = "Başarısız login (kullanıcı yok)",
+                    IpAddress = userIp
+                });
+                await _context.SaveChangesAsync();
+
+                return View(dto);
             }
+
+            if (user.LockoutEnd.HasValue && user.LockoutEnd > DateTime.UtcNow)
+            {
+                ModelState.AddModelError(string.Empty, $"Hesap kilitli. {user.LockoutEnd.Value.ToLocalTime()} tarihine kadar bekleyin.");
+
+                // Audit log
+                _context.AuditLogs.Add(new AuditLog
+                {
+                    UserEmail = dto.Email,
+                    Action = "Başarısız login (hesap kilitli)",
+                    IpAddress = userIp
+                });
+                await _context.SaveChangesAsync();
+
+                return View(dto);
+            }
+
+            if (!BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+            {
+                user.FailedAttempts++;
+                if (user.FailedAttempts >= 5)
+                {
+                    user.LockoutEnd = DateTime.UtcNow.AddMinutes(10);
+                    user.FailedAttempts = 0;
+                }
+                await _context.SaveChangesAsync();
+
+                ModelState.AddModelError(string.Empty, "Yanlış email veya şifre.");
+
+                // Audit log
+                _context.AuditLogs.Add(new AuditLog
+                {
+                    UserEmail = dto.Email,
+                    Action = "Başarısız login (yanlış şifre)",
+                    IpAddress = userIp
+                });
+                await _context.SaveChangesAsync();
+
+                return View(dto);
+            }
+
+            
+            user.FailedAttempts = 0;
+            user.LockoutEnd = null;
+            await _context.SaveChangesAsync();
+
+
+            _context.AuditLogs.Add(new AuditLog
+            {
+                UserEmail = dto.Email,
+                Action = "Başarılı login",
+                IpAddress = userIp
+            });
+            await _context.SaveChangesAsync();
+
 
             var claims = new List<Claim>
             {
@@ -61,6 +138,7 @@ namespace TaskTrackingSystem.Controllers
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 principal,
                 new AuthenticationProperties { IsPersistent = true });
+
             return RedirectToAction("Index", "Tasks");
         }
 

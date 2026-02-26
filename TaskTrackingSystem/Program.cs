@@ -41,6 +41,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         };
     });
 
+
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
@@ -66,6 +67,19 @@ using (var scope = app.Services.CreateScope())
         context.SaveChanges();
     }
 }
+
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = 500;
+        await context.Response.WriteAsync(
+            System.Text.Json.JsonSerializer.Serialize(new { message = "Beklenmeyen bir hata oluþtu." })
+        );
+    });
+});
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
