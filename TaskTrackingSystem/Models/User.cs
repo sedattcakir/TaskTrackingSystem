@@ -18,8 +18,8 @@ namespace TaskTrackingSystem.Models
         public string Email { get; set; } = string.Empty;
         public string PasswordHash { get; set; } = string.Empty;
         public string Role { get; set; } = "Personel";
-        public int FailedAttempts { get; set; } = 0; // Başarısız giriş denemeleri sayısı
-        public DateTime? LockoutEnd { get; set; } // Kilitlenme süresinin sonu
+        public int FailedAttempts { get; set; } = 0; 
+        public DateTime? LockoutEnd { get; set; } 
 
         public DateTime CreatedTime { get; set; } = DateTime.Now;
     }
