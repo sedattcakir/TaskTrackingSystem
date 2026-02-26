@@ -13,5 +13,6 @@ namespace TaskTrackingSystem.Data
         public DbSet<Project> Projects { get; set; }
         public DbSet<StatusType> StatusTypes { get; set; }
         public DbSet<PriorityTypes> PriorityTypes { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
     }
 }

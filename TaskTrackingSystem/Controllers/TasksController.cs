@@ -118,8 +118,34 @@ namespace TaskTrackingSystem.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateApi([FromBody] CreateTaskDto dto)
         {
+            if (dto == null)                                    
+                return BadRequest(new { message = "Geçersiz istek verisi." });
+
+
+            var errors = new List<string>();
+
+
             if (string.IsNullOrWhiteSpace(dto.Title))
-                return BadRequest(new { message = "Başlık zorunludur." });
+                errors.Add("Başlık zorunludur.");
+            else if (dto.Title.Length < 5 || dto.Title.Length > 100)
+                errors.Add("Başlık 5-100 karakter olmalıdır.");
+
+            if (dto.ProjectId == Guid.Empty)
+                errors.Add("Proje seçimi zorunludur.");
+
+            if (!string.IsNullOrWhiteSpace(dto.Description) &&
+                (dto.Description.Length < 10 || dto.Description.Length > 500))
+                errors.Add("Açıklama 10-500 karakter olmalıdır.");
+
+            if (dto.StartDate != null && dto.CompletionDate != null &&
+                dto.StartDate > dto.CompletionDate)
+                errors.Add("Başlangıç tarihi, tamamlanma tarihinden büyük olamaz.");
+
+            if (dto.UserIds == null || !dto.UserIds.Any())
+                errors.Add("En az bir kullanıcı atanmalıdır.");
+
+            if (errors.Any())
+                return BadRequest(new { message = "Form hataları mevcut.", errors });
 
             var task = new TaskItem
             {
@@ -130,24 +156,23 @@ namespace TaskTrackingSystem.Controllers
                 StatusCode = 0,
                 CompletionDate = dto.CompletionDate,
                 StartDate = dto.StartDate,
-                CreatedTime = DateTime.Now
+                CreatedTime = DateTime.UtcNow
             };
 
             _context.Tasks.Add(task);
             await _context.SaveChangesAsync();
 
-            if (dto.UserIds != null && dto.UserIds.Any())
+
+            foreach (var userId in dto.UserIds)
             {
-                foreach (var userId in dto.UserIds)
+                _context.TaskAssignments.Add(new TaskAssignment
                 {
-                    _context.TaskAssignments.Add(new TaskAssignment
-                    {
-                        TaskId = task.Id,
-                        UserId = userId,
-                        CreatedTime = DateTime.Now
-                    });
-                }
-                await _context.SaveChangesAsync();
+                    TaskId = task.Id,
+                    UserId = userId,
+                    CreatedTime = DateTime.UtcNow
+                });
+            }
+            await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetTasks), new { id = task.Id }, task);
         }
@@ -163,19 +188,44 @@ namespace TaskTrackingSystem.Controllers
             if (task == null)
                 return NotFound(new { message = "Görev bulunamadı." });
 
-            if(!IsAdmin())
+            if (!IsAdmin())
             {
                 var userId = GetCurrentUserId();
                 if (!task.TaskAssignments.Any(ta => ta.UserId == userId))
                     return StatusCode(403, new { message = "Bu göreve erişim yetkiniz yok." });
+
                 task.StatusCode = dto.StatusCode;
                 await _context.SaveChangesAsync();
                 return Ok(task);
             }
 
-            if(task.StatusCode == 2 && dto.StatusCode == 1)
-            {
+            if (task.StatusCode == 2 && dto.StatusCode == 1)
                 return BadRequest(new { message = "Tamamlanmış bir görevin durumunu değiştiremezsiniz." });
+
+            var errors = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(dto.Title))
+                errors.Add("Başlık zorunludur.");
+            else if (dto.Title.Length < 5 || dto.Title.Length > 100)
+                errors.Add("Başlık 5-100 karakter olmalıdır.");
+
+            if (dto.ProjectId == Guid.Empty)
+                errors.Add("Proje seçimi zorunludur.");
+
+            if (!string.IsNullOrWhiteSpace(dto.Description) &&
+                (dto.Description.Length < 10 || dto.Description.Length > 500))
+                errors.Add("Açıklama 10-500 karakter olmalıdır.");
+
+            if (dto.StartDate != null && dto.CompletionDate != null &&
+                dto.StartDate > dto.CompletionDate)
+                errors.Add("Başlangıç tarihi, tamamlanma tarihinden büyük olamaz.");
+
+            if (dto.UserIds == null || !dto.UserIds.Any())
+                errors.Add("En az bir kullanıcı atanmalıdır.");
+
+            if (errors.Any())
+                return BadRequest(new { message = "Form hataları mevcut.", errors });
+
 
             task.Title = dto.Title;
             task.Description = dto.Description;
@@ -188,16 +238,16 @@ namespace TaskTrackingSystem.Controllers
             var oldAssignments = _context.TaskAssignments.Where(ta => ta.TaskId == id).ToList();
             _context.TaskAssignments.RemoveRange(oldAssignments);
 
-                foreach (var userId in dto.UserIds)
+            foreach (var userId in dto.UserIds)
+            {
+                _context.TaskAssignments.Add(new TaskAssignment
                 {
-                    _context.TaskAssignments.Add(new TaskAssignment
-                    {
-                        TaskId = id,
-                        UserId = userId,
-                        CreatedTime = DateTime.Now
-                    });
-                }
+                    TaskId = id,
+                    UserId = userId,
+                    CreatedTime = DateTime.UtcNow
+                });
             }
+
             await _context.SaveChangesAsync();
             return Ok(task);
         }
@@ -209,12 +259,32 @@ namespace TaskTrackingSystem.Controllers
             var task = await _context.Tasks.FindAsync(id);
             if (task == null)
                 return NotFound(new { message = "Görev bulunamadı." });
+
+
             var assignments = _context.TaskAssignments.Where(ta => ta.TaskId == id);
             _context.TaskAssignments.RemoveRange(assignments);
+
+
             _context.Tasks.Remove(task);
+
+
             await _context.SaveChangesAsync();
+
+            string? userEmail = User.Identity?.Name ?? "Bilinmiyor";
+            string? userIp = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            _context.AuditLogs.Add(new AuditLog
+            {
+                UserEmail = userEmail,
+                Action = $"Görev silindi: {task.Title} (ID: {task.Id})",
+                IpAddress = userIp,
+                Timestamp = DateTime.UtcNow
+            });
+            await _context.SaveChangesAsync();
+
             return Ok(new { message = "Görev silindi." });
         }
+
 
         [HttpGet("api/users")]
         public async Task<IActionResult> GetUsers()
@@ -235,21 +305,35 @@ namespace TaskTrackingSystem.Controllers
         }
 
         [HttpPost("api/users")]
-        [Authorize("Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
         {
+            if (dto == null)
+                return BadRequest(new { message = "Geçersiz istek verisi." });
+
+            var errors = new List<string>();
             if (string.IsNullOrWhiteSpace(dto.Name))
                 return BadRequest(new { message = "Kullanıcı adı zorunludur." });
 
             if (string.IsNullOrWhiteSpace(dto.Email))
                 return BadRequest(new { message = "Email zorunludur." });
 
-            if (string.IsNullOrWhiteSpace(dto.Password))
-                return BadRequest(new { message = "Parola zorunludur." });
+            if (string.IsNullOrWhiteSpace(dto.Password) || dto.Password.Length < 8)
+                errors.Add("Şifre en az 8 karakter olmalı.");
+            else
+            {
+                if (!dto.Password.Any(char.IsUpper))
+                    errors.Add("Şifre en az 1 büyük harf içermeli.");
+                if (!dto.Password.Any(char.IsDigit))
+                    errors.Add("Şifre en az 1 rakam içermeli.");
+            }
 
             var exists = await _context.Users.AnyAsync(u => u.Email == dto.Email);
             if (exists)
                 return BadRequest(new { message = "Bu email zaten kullanılıyor." });
+
+            if (errors.Any())
+                return BadRequest(new { message = "Form hataları mevcut.", errors });
 
             var user = new User
             {
@@ -264,6 +348,19 @@ namespace TaskTrackingSystem.Controllers
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
+
+    
+            string? adminEmail = User.Identity?.Name ?? "Bilinmiyor";
+            string? userIp = HttpContext.Connection.RemoteIpAddress?.ToString();
+            _context.AuditLogs.Add(new AuditLog
+            {
+                UserEmail = adminEmail,                
+                Action = $"Personel eklendi: {user.Email}", 
+                IpAddress = userIp,                     
+                Timestamp = DateTime.UtcNow             
+            });
+            await _context.SaveChangesAsync();
+
             return Ok(user);
         }
 
@@ -377,6 +474,22 @@ namespace TaskTrackingSystem.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Atamalar güncellendi." });
+        }
+
+        [HttpGet("api/auditlogs")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAuditLogs() 
+        {
+            var logs = await _context.AuditLogs
+                .OrderByDescending(l => l.Timestamp)
+                .Select(l => new {
+                    l.Id,
+                    l.UserEmail,
+                    l.Action,
+                    l.Timestamp,
+                    l.IpAddress
+                }).ToListAsync();
+            return Ok(logs);
         }
 
 
