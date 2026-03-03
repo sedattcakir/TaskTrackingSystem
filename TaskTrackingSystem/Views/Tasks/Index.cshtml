@@ -1,0 +1,1310 @@
+﻿@{
+    ViewBag.Title = "Görev Takip Sistemi";
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Görev Takip Sistemi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        body {
+            background: #f0f0f0;
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+
+        .container {
+            max-width: 920px;
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-bottom: 24px;
+            border-radius: 10px;
+        }
+
+        .card-header-dark {
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .card-header-mid {
+            background: #333;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .card-header-gray {
+            background: #555;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .badge-pending {
+            background-color: #ffc107;
+            color: #000;
+        }
+
+        .badge-in-progress {
+            background-color: #17a2b8;
+            color: #fff;
+        }
+
+        .badge-completed {
+            background-color: #28a745;
+            color: #fff;
+        }
+
+        .task-item {
+            padding: 15px;
+            border-left: 4px solid #1a1a1a;
+            margin-bottom: 10px;
+            background: #fff;
+            border-radius: 6px;
+        }
+
+            .task-item:hover {
+                box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            }
+
+            .task-item.overdue {
+                border-left-color: #dc3545;
+            }
+
+        .project-item {
+            padding: 12px;
+            border-left: 4px solid #333;
+            margin-bottom: 8px;
+            background: #fff;
+            border-radius: 6px;
+        }
+
+            .project-item:hover {
+                box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            }
+
+        .user-item {
+            padding: 12px;
+            border-left: 4px solid #555;
+            margin-bottom: 8px;
+            background: #fff;
+            border-radius: 6px;
+        }
+
+            .user-item:hover {
+                box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            }
+
+        .task-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #1a1a1a;
+        }
+
+        .task-description {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .task-meta {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .btn-group-sm {
+            gap: 5px;
+        }
+
+        .form-section {
+            background: #fafafa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .user-list {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .top-bar {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px 28px;
+            margin-bottom: 24px;
+        }
+
+        .tab-btn {
+            padding: 8px 24px;
+            border: 2px solid rgba(255,255,255,0.3);
+            background: transparent;
+            color: #ccc;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+
+            .tab-btn:hover {
+                background: rgba(255,255,255,0.1);
+                color: #fff;
+            }
+
+            .tab-btn.active {
+                background: #fff;
+                color: #1a1a1a;
+                font-weight: 600;
+                border-color: #fff;
+            }
+
+        .overdue-text {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .avatar-sm {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 4px;
+            vertical-align: middle;
+            border: 1px solid #ddd;
+        }
+
+        .avatar-lg {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #333;
+        }
+
+        .avatar-placeholder {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #1a1a1a;
+            color: #fff;
+            font-weight: 600;
+            font-size: 11px;
+        }
+
+            .avatar-placeholder.avatar-lg {
+                font-size: 18px;
+            }
+
+        .assigned-users-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            margin-top: 6px;
+        }
+
+        .assigned-user-chip {
+            display: inline-flex;
+            align-items: center;
+            background: #eee;
+            border-radius: 20px;
+            padding: 2px 10px 2px 2px;
+            font-size: 12px;
+            color: #555;
+        }
+
+        .profile-preview {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #333;
+            display: none;
+        }
+
+        .profile-upload-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .flatpickr-input {
+            background: #fff !important;
+        }
+    </style>
+</head>
+<body>
+    @Html.AntiForgeryToken()  <!-- YENİ: CSRF token -->
+    <div class="container">
+
+        <div class="top-bar">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h4 class="text-white mb-0">Görev Takip Sistemi</h4>
+                    <small style="color:#999;">Görevlerinizi kolayca yönetin</small>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <span id="currentUserName" class="text-white" style="font-size:14px;"></span>
+                    <span id="currentUserRole" class="badge bg-secondary" style="font-size:11px;"></span>
+                    <button class="btn btn-sm btn-outline-light" onclick="logout()">Çıkış</button>
+                </div>
+            </div>
+            <div class="d-flex justify-content-center gap-3">
+                <button class="tab-btn active" onclick="showTab('tasks')">Görevler</button>
+                <button class="tab-btn" onclick="showTab('projects')">Projeler</button>
+                <button class="tab-btn" id="usersTabBtn" onclick="showTab('users')">Kullanıcılar</button>
+                <button class="tab-btn" id="auditTabBtn" onclick="showTab('audit')">İşlemler</button>
+            </div>
+        </div>
+
+        <div id="tasksSection">
+            <div class="card" id="taskFormCard">
+                <div class="card-header-dark"><h5 class="mb-0">Yeni Görev Ekle</h5></div>
+                <div class="card-body">
+                    <form id="taskForm">
+                        <div id="taskErrorAlert" class="alert alert-danger" style="display:none;"></div>
+                        <div class="form-section">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Görev Başlığı *</label>
+                                        <input type="text" class="form-control" id="title" placeholder="Görev başlığını giriniz" required maxlength="100">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Proje *</label>
+                                        <select class="form-select" id="addProjectSelect" required>
+                                            <option value="">Yükleniyor...</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Açıklama</label>
+                                <textarea class="form-control" id="description" rows="3" placeholder="Görev açıklamasını giriniz" maxlength="500"></textarea>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Öncelik</label>
+                                        <select class="form-select" id="addPriority">
+                                            <option value="0">Düşük</option>
+                                            <option value="1" selected>Orta</option>
+                                            <option value="2">Yüksek</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3 position-relative">
+                                        <label class="form-label">Başlangıç Tarihi</label>
+                                        <input type="text" class="form-control" id="addStartDate" placeholder="Başlangıç Tarihi Giriniz">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3 position-relative">
+                                        <label class="form-label">Tamamlanma Tarihi</label>
+                                        <input type="text" class="form-control" id="addCompletionDate" placeholder="Tamamlanma Tarihi Giriniz">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Atanan Kullanıcılar</label>
+                                <div id="addUserList" class="user-list">Yükleniyor...</div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-dark" id="submitBtn">
+                                    <span id="submitBtnText">Görev Ekle</span>
+                                    <span id="submitBtnSpinner" class="spinner-border spinner-border-sm ms-2" style="display:none;"></span>
+                                </button>
+                                <button type="reset" class="btn btn-outline-secondary">Temizle</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header-dark d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Görevler</h5>
+                    <span id="taskCount" class="badge bg-white text-dark">0</span>
+                </div>
+                <div class="card-body">
+                    <div class="loading" id="loadingSpinner">
+                        <div class="spinner-border text-dark" role="status"></div>
+                        <p class="mt-2">Görevler yükleniyor...</p>
+                    </div>
+                    <div id="taskList"></div>
+                    <div class="empty-state" id="emptyState" style="display:none;">
+                        <p class="fs-5">Henüz görev eklenmemiş</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="projectsSection" style="display:none;">
+            <div class="card" id="projectFormCard">
+                <div class="card-header-mid"><h5 class="mb-0">Yeni Proje Ekle</h5></div>
+                <div class="card-body">
+                    <form id="projectForm">
+                        <div class="form-section">
+                            <div class="mb-3 position-relative">
+                                <label class="form-label">Proje Başlığı *</label>
+                                <input type="text" class="form-control" id="projectTitle" placeholder="Proje başlığını giriniz" required maxlength="200">
+                            </div>
+                            <div class="mb-3 position-relative">
+                                <label class="form-label">Açıklama</label>
+                                <textarea class="form-control" id="projectDescription" rows="2" placeholder="Proje açıklamasını giriniz"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-dark" id="projectSubmitBtn">
+                                <span id="projectBtnText">Proje Ekle</span>
+                                <span id="projectBtnSpinner" class="spinner-border spinner-border-sm ms-2" style="display:none;"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header-mid d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Projeler</h5>
+                    <span id="projectCount" class="badge bg-white text-dark">0</span>
+                </div>
+                <div class="card-body">
+                    <div class="loading" id="projectLoadingSpinner">
+                        <div class="spinner-border text-dark" role="status"></div>
+                        <p class="mt-2">Projeler yükleniyor...</p>
+                    </div>
+                    <div id="projectList"></div>
+                    <div class="empty-state" id="projectEmptyState" style="display:none;">
+                        <p class="fs-5">Henüz proje eklenmemiş</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+
+        <div id="usersSection" style="display:none;">
+            <div class="card" id="userFormCard">
+                <div class="card-header-gray"><h5 class="mb-0">Yeni Kullanıcı Ekle</h5></div>
+                <div class="card-body">
+                    <form id="userForm">
+                        <div class="form-section">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="mb-3 position-relative">
+                                        <label class="form-label">Ad Soyad *</label>
+                                        <input type="text" class="form-control" id="userName" placeholder="Ad soyad" required maxlength="100" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3 position-relative">
+                                        <label class="form-label">Email *</label>
+                                        <input type="email" class="form-control" id="userEmail" placeholder="Email" required maxlength="150" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')">
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="mb-3 position-relative">
+                                        <label class="form-label">Şifre *</label>
+                                        <input type="password" class="form-control" id="userPassword" placeholder="Şifre" required autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')" required minlength="8">
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="mb-3">
+                                        <label class="form-label">Rol</label>
+                                        <select class="form-select" id="userRole">
+                                            <option value="Personel" selected>Personel</option>
+                                            <option value="Admin">Admin</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="mb-3 position-relative">
+                                        <label class="form-label">Profil Resmi</label>
+                                        <div class="profile-upload-area">
+                                            <img id="profilePreview" class="profile-preview" src="" alt="önizleme">
+                                            <label class="btn btn-sm btn-outline-secondary" style="cursor:pointer;">
+                                                Seç
+                                                <input type="file" id="profileImageInput" accept="image/*" style="display:none;" onchange="previewProfileImage(this)">
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-dark" id="userSubmitBtn">
+                                <span id="userBtnText">Kullanıcı Ekle</span>
+                                <span id="userBtnSpinner" class="spinner-border spinner-border-sm ms-2" style="display:none;"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header-gray d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Kullanıcılar</h5>
+                    <span id="userCount" class="badge bg-white text-dark">0</span>
+                </div>
+                <div class="card-body">
+                    <div class="loading" id="userLoadingSpinner">
+                        <div class="spinner-border text-dark" role="status"></div>
+                        <p class="mt-2">Kullanıcılar yükleniyor...</p>
+                    </div>
+                    <div id="userList"></div>
+                    <div class="empty-state" id="userEmptyState" style="display:none;">
+                        <p class="fs-5">Henüz kullanıcı eklenmemiş</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="auditSection" style="display:none;">
+            <div class="card">
+                <div class="card-header-dark d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Audit Loglar</h5>
+                    <span id="auditCount" class="badge bg-white text-dark">0</span>
+                </div>
+                <div class="card-body">
+                    <div id="auditList"></div>
+                    <div class="empty-state" id="auditEmptyState" style="display:none;">
+                        <p class="fs-5">Henüz log kaydı yok</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="background:#1a1a1a;color:#fff;">
+                    <h5 class="modal-title">Görev Düzenle</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="editForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="editId">
+                        <div class="mb-3 position-relative">
+                            <label class="form-label">Görev Başlığı</label>
+                            <input type="text" class="form-control" id="editTitle" required maxlength="100">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Açıklama</label>
+                            <textarea class="form-control" id="editDescription" rows="3" maxlength="500"></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Durum</label>
+                                    <select class="form-select" id="editStatus" required>
+                                        <option value="0">Bekliyor</option>
+                                        <option value="1">Yapılıyor</option>
+                                        <option value="2">Tamamlandı</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Öncelik</label>
+                                    <select class="form-select" id="editPriority" required>
+                                        <option value="0">Düşük</option>
+                                        <option value="1">Orta</option>
+                                        <option value="2">Yüksek</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3 position-relative">
+                                    <label class="form-label">Başlangıç Tarihi</label>
+                                    <input type="text" class="form-control" id="editStartDate" placeholder="Tarih seçin">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3 position-relative">
+                                    <label class="form-label">Tamamlanma Tarihi</label>
+                                    <input type="text" class="form-control" id="editCompletionDate" placeholder="Tarih seçin">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3" id="editProjectGroup">
+                            <label class="form-label">Proje</label>
+                            <select class="form-select" id="editProjectSelect" required>
+                                <option value="">Proje Seçiniz</option>
+                            </select>
+                        </div>
+                        <div class="mb-3" id="editUserGroup">
+                            <label class="form-label">Atanan Kullanıcılar</label>
+                            <div id="editUserList" class="user-list"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                        <button type="submit" class="btn btn-dark">
+                            <span id="saveBtnText">Kaydet</span>
+                            <span id="saveBtnSpinner" class="spinner-border spinner-border-sm ms-2" style="display:none;"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/tr.js"></script>
+    <script>
+        var API_URL = '/api/tasks';
+        var editModal, allUsers = [], allProjects = [];
+        var pendingProfileImage = null;
+        var fpAddStart, fpAddComp, fpEditStart, fpEditComp;
+        var currentUser = null;
+
+        // ← YENİ: CSRF header helper fonksiyonu
+        function csrfHeaders(contentType) {
+            var h = { 'X-CSRF-TOKEN': document.querySelector('input[name="__RequestVerificationToken"]').value };
+            if (contentType) h['Content-Type'] = contentType;
+            return h;
+        }
+
+
+        document.addEventListener('DOMContentLoaded', function () {
+            editModal = new bootstrap.Modal(document.getElementById('editModal'));
+
+            fetch('/api/me').then(function(r) { return r.json(); }).then(function(u) {
+                currentUser = u;
+                document.getElementById('currentUserName').textContent = u.name;
+                var rb = document.getElementById('currentUserRole');
+                rb.textContent = u.role;
+                rb.className = 'badge ' + (u.role === 'Admin' ? 'bg-dark' : 'bg-secondary');
+                applyRoleRestrictions();
+            });
+
+            fetch('/api/users').then(function(r) { return r.json(); }).then(function(d) { allUsers = d; renderUserCheckboxes('addUserList', []); });
+            loadProjectsList();
+            loadTasks();
+            document.getElementById('taskForm').addEventListener('submit', addTask);
+            document.getElementById('editForm').addEventListener('submit', updateTask);
+            document.getElementById('projectForm').addEventListener('submit', addProject);
+            document.getElementById('userForm').addEventListener('submit', addUser);
+
+            var fpConfig = {
+                locale: 'tr',
+                dateFormat: 'Y-m-d',
+                altInput: true,
+                altFormat: 'd F Y',
+                allowInput: true
+            };
+            fpAddStart = flatpickr('#addStartDate', fpConfig);
+            fpAddComp = flatpickr('#addCompletionDate', fpConfig);
+            fpEditStart = flatpickr('#editStartDate', fpConfig);
+            fpEditComp = flatpickr('#editCompletionDate', fpConfig);
+        });
+
+
+        function applyRoleRestrictions() {
+            if (!currentUser || currentUser.role !== 'Admin') {
+                document.getElementById('taskFormCard').style.display = 'none';
+                document.getElementById('projectFormCard').style.display = 'none';
+                document.getElementById('usersTabBtn').style.display = 'none';
+                document.getElementById('auditTabBtn').style.display = 'none';
+            }
+        }
+
+        function isAdmin() {
+            return currentUser && currentUser.role === 'Admin';
+        }
+
+        function logout() {
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/Account/Logout';
+            var token = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (token) {
+                var hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = '__RequestVerificationToken';
+                hidden.value = token.value;
+                form.appendChild(hidden);
+            }
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+            document.getElementById('tasksSection').style.display = 'none';
+            document.getElementById('projectsSection').style.display = 'none';
+            document.getElementById('usersSection').style.display = 'none';
+            document.getElementById('auditSection').style.display = 'none';
+
+            if (tab == 'tasks') {
+                document.getElementById('tasksSection').style.display = 'block';
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+            } else if (tab == 'projects') {
+                document.getElementById('projectsSection').style.display = 'block';
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                loadProjectsView();
+            } else if (tab =='users') {
+                document.getElementById('usersSection').style.display = 'block';
+                document.querySelectorAll('.tab-btn')[2].classList.add('active');
+                loadUsersView();
+            } else if (tab == 'audit') {
+                document.getElementById('auditSection').style.display = 'block';
+                document.querySelectorAll('.tab-btn')[3].classList.add('active');
+                loadAuditLogs();
+            }
+        }
+
+
+
+        function formatDate(d) {
+            return new Date(d).toLocaleDateString('tr-TR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function formatShortDate(d) {
+            return new Date(d).toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' });
+        }
+
+        function getStatusBadge(s) {
+            var badges = {
+                0: '<span class="badge badge-pending">Bekliyor</span>',
+                1: '<span class="badge badge-in-progress">Yapılıyor</span>',
+                2: '<span class="badge badge-completed">Tamamlandı</span>'
+            };
+            return badges[s] || s;
+        }
+
+        function getPriorityBadge(p) {
+            var badges = {
+                0: '<span class="badge bg-secondary">Düşük</span>',
+                1: '<span class="badge bg-warning text-dark">Orta</span>',
+                2: '<span class="badge bg-danger">Yüksek</span>'
+            };
+            return badges[p] || p;
+        }
+
+        function escapeHtml(t) {
+            if (!t) return '';
+            var d = document.createElement('div');
+            d.textContent = t;
+            return d.innerHTML;
+        }
+
+        function getInitials(name) {
+            if (!name) return '?';
+            var parts = name.trim().split(' ');
+            if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+            return parts[0][0].toUpperCase();
+        }
+
+        function buildAvatarHtml(profileImage, name, sizeClass) {
+            if (!sizeClass) sizeClass = 'avatar-sm';
+            if (profileImage &&
+                (profileImage.startsWith('data:image/png;base64,') ||
+                 profileImage.startsWith('data:image/jpeg;base64,') ||
+                 profileImage.startsWith('data:image/jpg;base64,'))) {
+                return '<img src="' + profileImage + '" class="' + sizeClass + '" alt="' + escapeHtml(name) + '">';
+            }
+            return '<span class="' + sizeClass + ' avatar-placeholder">' + getInitials(name) + '</span>';
+        }
+
+        function getFpDate(fpInstance) {
+            if (fpInstance && fpInstance.selectedDates && fpInstance.selectedDates.length > 0) {
+                return fpInstance.selectedDates[0].toISOString();
+            }
+            return null;
+        }
+
+        function showNotification(msg, type) {
+            if (!type) type = 'info';
+            var a = document.createElement('div');
+            a.className = 'alert alert-' + type + ' alert-dismissible fade show';
+
+            var textNode = document.createTextNode(msg);
+            a.appendChild(textNode);
+
+            var closeBtn = document.createElement('button');
+            closeBtn.type = 'button';
+            closeBtn.className = 'btn-close';
+            closeBtn.setAttribute('data-bs-dismiss', 'alert');
+            a.appendChild(closeBtn);
+
+            var c = document.querySelector('.container');
+            c.insertBefore(a, c.firstChild);
+            setTimeout(function() { a.remove(); }, 5000);
+        }
+
+        function renderProjectSelect(selectId, selectedId) {
+            var s = document.getElementById(selectId);
+            if (!s) return;
+            var html = '<option value="">Proje Seçiniz</option>';
+            for (var i = 0; i < allProjects.length; i++) {
+                var p = allProjects[i];
+                var sel = (p.id === selectedId) ? ' selected' : '';
+                html += '<option value="' + p.id + '"' + sel + '>' + escapeHtml(p.title) + '</option>';
+            }
+            s.innerHTML = html;
+        }
+
+        function renderUserCheckboxes(containerId, selectedIds) {
+            var c = document.getElementById(containerId);
+            if (!c) return;
+            if (allUsers.length === 0) {
+                c.innerHTML = '<small class="text-muted">Kullanıcı bulunamadı</small>';
+                return;
+            }
+            var html = '';
+            for (var i = 0; i < allUsers.length; i++) {
+                var u = allUsers[i];
+                var chk = (selectedIds.indexOf(u.id) >= 0) ? ' checked' : '';
+                html += '<div class="form-check d-flex align-items-center gap-2">';
+                html += '<input class="form-check-input" type="checkbox" value="' + u.id + '" id="' + containerId + '_' + u.id + '"' + chk + '>';
+                html += buildAvatarHtml(u.profileImage, u.name, 'avatar-sm');
+                html += '<label class="form-check-label" for="' + containerId + '_' + u.id + '">' + escapeHtml(u.name) + '</label>';
+                html += '</div>';
+            }
+            c.innerHTML = html;
+        }
+
+        function getSelectedUserIds(containerId) {
+            var checkboxes = document.querySelectorAll('#' + containerId + ' input:checked');
+            var ids = [];
+            for (var i = 0; i < checkboxes.length; i++) {
+                ids.push(checkboxes[i].value);
+            }
+            return ids;
+        }
+
+
+        function previewProfileImage(input) {
+            var preview = document.getElementById('profilePreview');
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    pendingProfileImage = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+
+        function loadProjectsList() {
+            fetch('/api/projects').then(function(r) { return r.json(); }).then(function(d) {
+                allProjects = d;
+                renderProjectSelect('addProjectSelect', '');
+            });
+        }
+
+        function loadProjectsView() {
+            var sp = document.getElementById('projectLoadingSpinner');
+            var li = document.getElementById('projectList');
+            var em = document.getElementById('projectEmptyState');
+            sp.style.display = 'block';
+            li.innerHTML = '';
+            em.style.display = 'none';
+
+            fetch('/api/projects').then(function(r) { return r.json(); }).then(function(projects) {
+                sp.style.display = 'none';
+                document.getElementById('projectCount').textContent = projects.length;
+                if (projects.length === 0) { em.style.display = 'block'; return; }
+                for (var i = 0; i < projects.length; i++) {
+                    var p = projects[i];
+                    var e = document.createElement('div');
+                    e.className = 'project-item border rounded';
+                    var descHtml = p.description ? '<div style="color:#666;font-size:14px;">' + escapeHtml(p.description) + '</div>' : '';
+                    var delBtn = isAdmin() ? '<button class="btn btn-sm btn-outline-danger" onclick="deleteProject(\'' + p.id + '\')">Sil</button>' : '';
+                    e.innerHTML = '<div class="d-flex justify-content-between align-items-center"><div>'
+                        + '<div style="font-weight:600;color:#1a1a1a;">' + escapeHtml(p.title) + '</div>'
+                        + descHtml
+                        + '<div style="font-size:12px;color:#999;">' + formatDate(p.createdTime) + '</div>'
+                        + '</div>' + delBtn + '</div>';
+                    li.appendChild(e);
+                }
+            }).catch(function(err) {
+                sp.style.display = 'none';
+                li.innerHTML = '<div class="alert alert-warning">Projeler yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.</div>';
+            });
+        }
+
+        function addProject(e) {
+            e.preventDefault();
+            var title = document.getElementById('projectTitle').value.trim();
+            var desc = document.getElementById('projectDescription').value.trim();
+            if (!title) { alert('Proje başlığı girin!'); return; }
+
+            var btn = document.getElementById('projectSubmitBtn');
+            var bt = document.getElementById('projectBtnText');
+            var bs = document.getElementById('projectBtnSpinner');
+            btn.disabled = true; bt.style.display = 'none'; bs.style.display = 'inline-block';
+
+            fetch('/api/projects', {
+                method: 'POST',
+                headers: csrfHeaders('application/json'),  // ← YENİ
+                body: JSON.stringify({ title: title, description: desc })
+            })
+            .then(function(r) { if (!r.ok) throw new Error('Proje eklenemedi'); return r.json(); })
+            .then(function() {
+                document.getElementById('projectForm').reset();
+                loadProjectsList();
+                loadProjectsView();
+                showNotification('Proje eklendi!', 'success');
+            })
+            .catch(function(err) { showNotification('Hata: ' + err.message, 'danger'); })
+            .finally(function() { btn.disabled = false; bt.style.display = 'inline'; bs.style.display = 'none'; });
+        }
+
+        function deleteProject(projectId) {
+            if (!confirm('Bu projeyi silmek istediğinize emin misiniz?')) return;
+            fetch('/api/projects/' + projectId, { method: 'DELETE', headers: csrfHeaders() })  // ← YENİ
+            .then(function(r) {
+                if (!r.ok) return r.json().then(function(d) { throw new Error(d.message || 'Silinemedi'); });
+                loadProjectsList();
+                loadProjectsView();
+                showNotification('Proje silindi!', 'success');
+            })
+            .catch(function(err) { showNotification('Proje silinirken bir hata oluştu.', 'danger'); });
+        }
+
+
+        function loadUsersView() {
+            var sp = document.getElementById('userLoadingSpinner');
+            var li = document.getElementById('userList');
+            var em = document.getElementById('userEmptyState');
+            sp.style.display = 'block';
+            li.innerHTML = '';
+            em.style.display = 'none';
+
+            fetch('/api/users').then(function(r) { return r.json(); }).then(function(users) {
+                sp.style.display = 'none';
+                document.getElementById('userCount').textContent = users.length;
+                if (users.length === 0) { em.style.display = 'block'; return; }
+                for (var i = 0; i < users.length; i++) {
+                    var u = users[i];
+                    var e = document.createElement('div');
+                    e.className = 'user-item border rounded';
+                    var roleBadge = u.role === 'Admin' ? 'bg-dark' : 'bg-secondary';
+                    var delBtn = isAdmin() ? '<button class="btn btn-sm btn-outline-danger" onclick="deleteUser(\'' + u.id + '\')">Sil</button>' : '';
+                    e.innerHTML = '<div class="d-flex justify-content-between align-items-center">'
+                        + '<div class="d-flex align-items-center gap-3">'
+                        + buildAvatarHtml(u.profileImage, u.name, 'avatar-lg')
+                        + '<div>'
+                        + '<div style="font-weight:600;color:#1a1a1a;">' + escapeHtml(u.name) + ' <span class="badge ' + roleBadge + '" style="font-size:10px;">' + escapeHtml(u.role) + '</span></div>'
+                        + '<div style="color:#666;font-size:14px;">' + escapeHtml(u.email) + '</div>'
+                        + '<div style="font-size:12px;color:#999;">' + formatDate(u.createdTime) + '</div>'
+                        + '</div></div>'
+                        + delBtn
+                        + '</div>';
+                    li.appendChild(e);
+                }
+            }).catch(function(err) {
+                sp.style.display = 'none';
+                li.innerHTML = '<div class="alert alert-warning">Kullanıcılar yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.</div>';
+            });
+        }
+
+        function addUser(e) {
+            e.preventDefault();
+            var name = document.getElementById('userName').value.trim();
+            var email = document.getElementById('userEmail').value.trim();
+            var password = document.getElementById('userPassword').value;
+            var role = document.getElementById('userRole').value;
+            if (!name) { alert('Ad soyad giriniz!'); return; }
+            if (!email) { alert('Email giriniz!'); return; }
+            if (!password) { alert('Şifre giriniz!'); return; }
+            if (password.length < 8) { showNotification('Şifre en az 8 karakter olmalı.', 'danger'); return; }
+            if (!/[A-Z]/.test(password)) { showNotification('Şifre en az 1 büyük harf içermeli.', 'danger'); return; }
+            if (!/[0-9]/.test(password)) { showNotification('Şifre en az 1 rakam içermeli.', 'danger'); return; }
+
+            var btn = document.getElementById('userSubmitBtn');
+            var bt = document.getElementById('userBtnText');
+            var bs = document.getElementById('userBtnSpinner');
+            btn.disabled = true; bt.style.display = 'none'; bs.style.display = 'inline-block';
+
+            fetch('/api/users', {
+                method: 'POST',
+                headers: csrfHeaders('application/json'),  // ← YENİ
+                body: JSON.stringify({ name: name, email: email, password: password, role: role, profileImage: pendingProfileImage })
+            })
+            .then(function(r) {
+                if (!r.ok) return r.json().then(function(d) { throw new Error(d.message || 'Kullanıcı eklenemedi'); });
+                return r.json();
+            })
+            .then(function() {
+                document.getElementById('userForm').reset();
+                document.getElementById('profilePreview').style.display = 'none';
+                pendingProfileImage = null;
+                loadUsersView();
+                fetch('/api/users').then(function(r) { return r.json(); }).then(function(d) { allUsers = d; renderUserCheckboxes('addUserList', []); });
+                showNotification('Kullanıcı eklendi!', 'success');
+            })
+            .catch(function(err) { showNotification('Hata: ' + err.message, 'danger'); })
+            .finally(function() { btn.disabled = false; bt.style.display = 'inline'; bs.style.display = 'none'; });
+        }
+
+        function deleteUser(userId) {
+            if (!confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) return;
+            fetch('/api/users/' + userId, { method: 'DELETE', headers: csrfHeaders() })  // ← YENİ
+            .then(function(r) {
+                if (!r.ok) return r.json().then(function(d) { throw new Error(d.message || 'Silinemedi'); });
+                loadUsersView();
+                fetch('/api/users').then(function(r) { return r.json(); }).then(function(d) { allUsers = d; renderUserCheckboxes('addUserList', []); });
+                showNotification('Kullanıcı silindi!', 'success');
+            })
+            .catch(function(err) { showNotification('Kullanıcı silinirken bir hata oluştu.', 'danger'); });
+        }
+
+        function loadTasks() {
+            var sp = document.getElementById('loadingSpinner');
+            var li = document.getElementById('taskList');
+            var em = document.getElementById('emptyState');
+            sp.style.display = 'block';
+            li.innerHTML = '';
+            em.style.display = 'none';
+
+            fetch(API_URL).then(function(r) {
+                if (!r.ok) throw new Error('Ağ hatası');
+                return r.json();
+            }).then(function(tasks) {
+                sp.style.display = 'none';
+                if (tasks.length === 0) {
+                    em.style.display = 'block';
+                    document.getElementById('taskCount').textContent = '0';
+                    return;
+                }
+                document.getElementById('taskCount').textContent = tasks.length;
+
+                for (var i = 0; i < tasks.length; i++) {
+                    var task = tasks[i];
+                    var el = document.createElement('div');
+                    el.id = 'task-' + task.id;
+
+                    var isOverdue = false;
+                    if (task.completionDate && task.statusCode !== 2) {
+                        var today = new Date();
+                        today.setHours(0,0,0,0);
+                        var compDate = new Date(task.completionDate);
+                        isOverdue = compDate < today;
+                    }
+
+                    el.className = 'task-item border rounded' + (isOverdue ? ' overdue' : '');
+
+                    var usersHtml = '';
+                    if (task.assignedUsers && task.assignedUsers.length > 0) {
+                        usersHtml = '<div class="assigned-users-row">';
+                        for (var j = 0; j < task.assignedUsers.length; j++) {
+                            var au = task.assignedUsers[j];
+                            usersHtml += '<span class="assigned-user-chip">'
+                                + buildAvatarHtml(au.profileImage, au.name, 'avatar-sm')
+                                + ' ' + escapeHtml(au.name) + '</span>';
+                        }
+                        usersHtml += '</div>';
+                    }
+
+                    var projectHtml = task.projectTitle ? '<span class="me-3">' + escapeHtml(task.projectTitle) + '</span>' : '';
+
+                    var startHtml = '';
+                    if (task.startDate) {
+                        startHtml = '<span class="ms-2">Başlangıç: ' + formatShortDate(task.startDate) + '</span>';
+                    }
+
+                    var completionHtml = '';
+                    if (task.completionDate) {
+                        var cls = isOverdue ? ' overdue-text' : '';
+                        completionHtml = '<span class="ms-2' + cls + '">Bitiş: ' + formatShortDate(task.completionDate) + '</span>';
+                    }
+
+                    var buttonsHtml = '';
+                    if (isAdmin()) {
+                        buttonsHtml = '<button class="btn btn-sm btn-outline-dark" onclick="openEditModal(\'' + task.id + '\')">Düzenle</button>'
+                            + '<button class="btn btn-sm btn-outline-danger" onclick="deleteTask(\'' + task.id + '\')">Sil</button>';
+                    } else {
+                        buttonsHtml = '<button class="btn btn-sm btn-outline-dark" onclick="openEditModal(\'' + task.id + '\')">Güncelle</button>';
+                    }
+
+                    el.innerHTML = '<div class="d-flex justify-content-between align-items-start">'
+                        + '<div class="flex-grow-1">'
+                        + '<div class="task-title">' + escapeHtml(task.title) + '</div>'
+                        + (task.description ? '<div class="task-description">' + escapeHtml(task.description) + '</div>' : '')
+                        + '<div class="task-meta">'
+                        + '<span class="me-3">' + formatDate(task.createdTime) + '</span>'
+                        + projectHtml
+                        + '<span>' + getStatusBadge(task.statusCode) + '</span>'
+                        + '<span class="ms-2">' + getPriorityBadge(task.priority) + '</span>'
+                        + startHtml
+                        + completionHtml
+                        + '</div>'
+                        + usersHtml
+                        + '</div>'
+                        + '<div class="btn-group-sm d-flex">' + buttonsHtml + '</div></div>';
+                    li.appendChild(el);
+                }
+            }).catch(function(err) {
+                sp.style.display = 'none';
+                li.innerHTML = '<div class="alert alert-warning">Görevler yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.</div>';
+            });
+        }
+
+        function addTask(e) {
+            e.preventDefault();
+
+
+            var errorDiv = document.getElementById('taskErrorAlert');
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = '';
+
+            var title = document.getElementById('title').value.trim();
+            var desc = document.getElementById('description').value.trim();
+            var projectId = document.getElementById('addProjectSelect').value;
+            var priority = parseInt(document.getElementById('addPriority').value);
+            var startDate = getFpDate(fpAddStart);
+            var completionDate = getFpDate(fpAddComp);
+
+            if (!title) {
+                errorDiv.textContent = 'Görev başlığını giriniz!';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            if (!projectId) {
+                errorDiv.textContent = 'Proje seçiniz!';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            var btn = document.getElementById('submitBtn');
+            var bt = document.getElementById('submitBtnText');
+            var bs = document.getElementById('submitBtnSpinner');
+            btn.disabled = true;
+            bt.style.display = 'none';
+            bs.style.display = 'inline-block';
+
+            fetch(API_URL, {
+                method: 'POST',
+                headers: csrfHeaders('application/json'),  // ← YENİ
+                body: JSON.stringify({
+                    title: title,
+                    description: desc,
+                    projectId: projectId,
+                    priority: priority,
+                    startDate: startDate,
+                    completionDate: completionDate,
+                    userIds: getSelectedUserIds('addUserList')
+                })
+            })
+            .then(function(r) {
+                if (!r.ok) {
+                    return r.json().then(function(d) {
+                        throw new Error(d.message || 'Görev eklenemedi');
+                    });
+                }
+                return r.json();
+            })
+            .then(function() {
+                document.getElementById('taskForm').reset();
+                fpAddStart.clear();
+                fpAddComp.clear();
+                renderProjectSelect('addProjectSelect', '');
+                renderUserCheckboxes('addUserList', []);
+                loadTasks();
+                showNotification('Görev eklendi!', 'success');
+            })
+            .catch(function(err) {
+                errorDiv.textContent = err.message || 'Görev eklenirken bir hata oluştu.';
+                errorDiv.style.display = 'block';
+            })
+            .finally(function() {
+                btn.disabled = false;
+                bt.style.display = 'inline';
+                bs.style.display = 'none';
+            });
+        }
+
+        function openEditModal(taskId) {
+            fetch(API_URL + '/' + taskId).then(function(r) {
+                if (!r.ok) throw new Error('Görev bulunamadı');
+                return r.json();
+            }).then(function(task) {
+                document.getElementById('editId').value = task.id;
+                document.getElementById('editTitle').value = task.title;
+                document.getElementById('editDescription').value = task.description || '';
+
+                var ss = document.getElementById('editStatus');
+                if (task.statusCode === 2) {
+                    ss.innerHTML = '<option value="0">Bekliyor</option><option value="2" selected>Tamamlandı</option>';
+                } else {
+                    ss.innerHTML = '<option value="0">Bekliyor</option><option value="1">Yapılıyor</option><option value="2">Tamamlandı</option>';
+                    ss.value = task.statusCode;
+                }
+
+                document.getElementById('editPriority').value = task.priority;
+                fpEditStart.setDate(task.startDate || '', false);
+                fpEditComp.setDate(task.completionDate || '', false);
+                renderProjectSelect('editProjectSelect', task.projectId);
+
+                var selectedIds = [];
+                if (task.assignedUsers) {
+                    for (var i = 0; i < task.assignedUsers.length; i++) {
+                        selectedIds.push(task.assignedUsers[i].id);
+                    }
+                }
+                renderUserCheckboxes('editUserList', selectedIds);
+
+                if (!isAdmin()) {
+                    document.getElementById('editTitle').disabled = true;
+                    document.getElementById('editDescription').disabled = true;
+                    document.getElementById('editPriority').disabled = true;
+                    document.getElementById('editProjectGroup').style.display = 'none';
+                    document.getElementById('editUserGroup').style.display = 'none';
+                    if (fpEditStart) {
+                        fpEditStart.set('clickOpens', false);
+                        fpEditStart.set('allowInput', false);
+                        fpEditStart.altInput.disabled = true;
+                    }
+                    if (fpEditComp) {
+                        fpEditComp.set('clickOpens', false);
+                        fpEditComp.set('allowInput', false);
+                        fpEditComp.altInput.disabled = true;
+                    }
+                } else {
+                    document.getElementById('editTitle').disabled = false;
+                    document.getElementById('editDescription').disabled = false;
+                    document.getElementById('editPriority').disabled = false;
+                    document.getElementById('editProjectGroup').style.display = 'block';
+                    document.getElementById('editUserGroup').style.display = 'block';
+                    if (fpEditStart) {
+                        fpEditStart.set('clickOpens', true);
+                        fpEditStart.set('allowInput', true);
+                        fpEditStart.altInput.disabled = false;
+                    }
+                    if (fpEditComp) {
+                        fpEditComp.set('clickOpens', true);
+                        fpEditComp.set('allowInput', true);
+                        fpEditComp.altInput.disabled = false;
+                    }
+                }
+
+                editModal.show();
+            }).catch(function(err) { showNotification('Hata: ' + err.message, 'danger'); });
+        }
+
+        function updateTask(e) {
+            e.preventDefault();
+            var id = document.getElementById('editId').value;
+            var title = document.getElementById('editTitle').value.trim();
+            var desc = document.getElementById('editDescription').value.trim();
+            var statusCode = parseInt(document.getElementById('editStatus').value);
+            var priority = parseInt(document.getElementById('editPriority').value);
+            var startDate = getFpDate(fpEditStart);
+            var completionDate = getFpDate(fpEditComp);
+            var projectId = document.getElementById('editProjectSelect').value;
+            if (!title) { alert('Görev başlığını girin!'); return; }
+
+            var bt = document.getElementById('saveBtnText');
+            var bs = document.getElementById('saveBtnSpinner');
+            bt.style.display = 'none'; bs.style.display = 'inline-block';
+
+            fetch(API_URL + '/' + id, {
+                method: 'PUT',
+                headers: csrfHeaders('application/json'),  // ← YENİ
+                body: JSON.stringify({
+                    title: title,
+                    description: desc,
+                    statusCode: statusCode,
+                    priority: priority,
+                    startDate: startDate,
+                    completionDate: completionDate,
+                    projectId: projectId,
+                    userIds: getSelectedUserIds('editUserList')
+                })
+            })
+            .then(function(r) { if (!r.ok) throw new Error('Güncellenemedi'); return r.json(); })
+            .then(function() {
+                editModal.hide();
+                loadTasks();
+                showNotification('Görev güncellendi!', 'success');
+            })
+            .catch(function(err) { showNotification('Hata: ' + err.message, 'danger'); })
+            .finally(function() { bt.style.display = 'inline'; bs.style.display = 'none'; });
+        }
+
+        function deleteTask(taskId) {
+            if (!confirm('Bu görevi silmek istediğinize emin misiniz?')) return;
+            fetch(API_URL + '/' + taskId, { method: 'DELETE', headers: csrfHeaders() })  // ← YENİ
+            .then(function(r) { if (!r.ok) throw new Error('Silinemedi'); loadTasks(); showNotification('Görev silindi!', 'success'); })
+            .catch(function(err) { showNotification('Görev silinirken bir hata oluştu.', 'danger'); });
+        }
+        function loadAuditLogs() {
+            var li = document.getElementById('auditList');
+            var em = document.getElementById('auditEmptyState');
+            li.innerHTML = '<div class="text-center p-3"><div class="spinner-border text-dark"></div></div>';
+            em.style.display = 'none';
+
+            fetch('/api/auditlogs').then(function(r) { return r.json(); }).then(function(logs) {
+                document.getElementById('auditCount').textContent = logs.length;
+                if (logs.length === 0) { li.innerHTML = ''; em.style.display = 'block'; return; }
+                var html = '';
+                for (var i = 0; i < logs.length; i++) {
+                    var log = logs[i];
+                    var iconColor = log.action.indexOf('Başarılı') >= 0 ? '#28a745' :
+                                    log.action.indexOf('Başarısız') >= 0 ? '#dc3545' :
+                                    log.action.indexOf('silindi') >= 0 ? '#dc3545' :
+                                    log.action.indexOf('eklendi') >= 0 ? '#17a2b8' : '#666';
+                    html += '<div class="task-item border rounded" style="border-left-color:' + iconColor + ' !important;">'
+                        + '<div class="d-flex justify-content-between align-items-center">'
+                        + '<div>'
+                        + '<div style="font-weight:600;color:#1a1a1a;">' + escapeHtml(log.action) + '</div>'
+                        + '<div style="font-size:13px;color:#666;">Kullanıcı: ' + escapeHtml(log.userEmail) + ' &bull; IP: ' + escapeHtml(log.ipAddress || '-') + '</div>'
+                        + '</div>'
+                        + '<div style="font-size:12px;color:#999;white-space:nowrap;">' + formatDate(log.timestamp) + '</div>'
+                        + '</div></div>';
+                }
+                li.innerHTML = html;
+            }).catch(function() {
+                li.innerHTML = '<div class="alert alert-warning">Loglar yüklenirken bir hata oluştu.</div>';
+            });
+        }
+
+    </script>
+</body>
+</html>
