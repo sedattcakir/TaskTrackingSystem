@@ -268,7 +268,7 @@
     </style>
 </head>
 <body>
-    @Html.AntiForgeryToken()  <!-- YENİ: CSRF token -->
+    @Html.AntiForgeryToken()  
     <div class="container">
 
         <div class="top-bar">
@@ -600,7 +600,7 @@
         var fpAddStart, fpAddComp, fpEditStart, fpEditComp;
         var currentUser = null;
 
-        // ← YENİ: CSRF header helper fonksiyonu
+       
         function csrfHeaders(contentType) {
             var h = { 'X-CSRF-TOKEN': document.querySelector('input[name="__RequestVerificationToken"]').value };
             if (contentType) h['Content-Type'] = contentType;
@@ -883,7 +883,7 @@
 
             fetch('/api/projects', {
                 method: 'POST',
-                headers: csrfHeaders('application/json'),  // ← YENİ
+                headers: csrfHeaders('application/json'),  
                 body: JSON.stringify({ title: title, description: desc })
             })
             .then(function(r) { if (!r.ok) throw new Error('Proje eklenemedi'); return r.json(); })
@@ -899,7 +899,7 @@
 
         function deleteProject(projectId) {
             if (!confirm('Bu projeyi silmek istediğinize emin misiniz?')) return;
-            fetch('/api/projects/' + projectId, { method: 'DELETE', headers: csrfHeaders() })  // ← YENİ
+            fetch('/api/projects/' + projectId, { method: 'DELETE', headers: csrfHeaders() })  
             .then(function(r) {
                 if (!r.ok) return r.json().then(function(d) { throw new Error(d.message || 'Silinemedi'); });
                 loadProjectsList();
@@ -966,7 +966,7 @@
 
             fetch('/api/users', {
                 method: 'POST',
-                headers: csrfHeaders('application/json'),  // ← YENİ
+                headers: csrfHeaders('application/json'),  
                 body: JSON.stringify({ name: name, email: email, password: password, role: role, profileImage: pendingProfileImage })
             })
             .then(function(r) {
@@ -987,7 +987,7 @@
 
         function deleteUser(userId) {
             if (!confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) return;
-            fetch('/api/users/' + userId, { method: 'DELETE', headers: csrfHeaders() })  // ← YENİ
+            fetch('/api/users/' + userId, { method: 'DELETE', headers: csrfHeaders() }) 
             .then(function(r) {
                 if (!r.ok) return r.json().then(function(d) { throw new Error(d.message || 'Silinemedi'); });
                 loadUsersView();
@@ -1123,7 +1123,7 @@
 
             fetch(API_URL, {
                 method: 'POST',
-                headers: csrfHeaders('application/json'),  // ← YENİ
+                headers: csrfHeaders('application/json'), 
                 body: JSON.stringify({
                     title: title,
                     description: desc,
@@ -1248,7 +1248,7 @@
 
             fetch(API_URL + '/' + id, {
                 method: 'PUT',
-                headers: csrfHeaders('application/json'),  // ← YENİ
+                headers: csrfHeaders('application/json'),
                 body: JSON.stringify({
                     title: title,
                     description: desc,
@@ -1272,7 +1272,7 @@
 
         function deleteTask(taskId) {
             if (!confirm('Bu görevi silmek istediğinize emin misiniz?')) return;
-            fetch(API_URL + '/' + taskId, { method: 'DELETE', headers: csrfHeaders() })  // ← YENİ
+            fetch(API_URL + '/' + taskId, { method: 'DELETE', headers: csrfHeaders() })  
             .then(function(r) { if (!r.ok) throw new Error('Silinemedi'); loadTasks(); showNotification('Görev silindi!', 'success'); })
             .catch(function(err) { showNotification('Görev silinirken bir hata oluştu.', 'danger'); });
         }
